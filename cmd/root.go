@@ -17,6 +17,10 @@ var rootCmd = &cobra.Command{
 	SilenceUsage: true,
 }
 
+func init() {
+	rootCmd.PersistentFlags().BoolP("yes", "y", false, "skip confirmation prompts")
+}
+
 func Execute() error {
 	return rootCmd.Execute()
 }

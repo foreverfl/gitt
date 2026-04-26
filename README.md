@@ -42,6 +42,15 @@ cd ~/code/doctree
 go build -o ~/.local/bin/doctree .
 ```
 
+## Uninstall
+
+```bash
+doctree uninstall
+```
+
+데몬 종료 → `~/.doctree/` (sock, pid, log, db) 삭제 → 바이너리(`os.Executable()`) 삭제.
+프롬프트 없이 가려면 `-y` / `--yes`.
+
 ## zshrc
 
 ```bash
