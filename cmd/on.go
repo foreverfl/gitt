@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/foreverfl/doctree/internal/banner"
 	"github.com/foreverfl/doctree/internal/daemon"
 	"github.com/foreverfl/doctree/internal/paths"
 	"github.com/foreverfl/doctree/internal/process"
@@ -48,6 +49,7 @@ var onCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		banner.Print(os.Stdout, installedVersion())
 		fmt.Printf("doctree daemon started (pid=%d)\n", pid)
 		return nil
 	},

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/foreverfl/doctree/internal/daemon"
 	"github.com/foreverfl/doctree/internal/paths"
@@ -18,7 +17,7 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update doctree to the latest release",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		current := readInstalledVersion()
+		current := installedVersion()
 
 		fmt.Println("checking latest release...")
 		latest, err := release.LatestTag()
@@ -111,18 +110,6 @@ var updateCmd = &cobra.Command{
 		}
 		return nil
 	},
-}
-
-func readInstalledVersion() string {
-	path, err := paths.VersionPath()
-	if err != nil {
-		return ""
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))
 }
 
 func init() {
