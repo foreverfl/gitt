@@ -1,0 +1,1 @@
+SELECT note FROM test LIMIT 1;

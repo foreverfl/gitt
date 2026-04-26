@@ -9,34 +9,42 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/foreverfl/doctree/internal/store"
 )
 
 type handler func(req Request) Response
 
 type server struct {
 	listener     net.Listener
+	store        *store.Store
 	handlers     map[Op]handler
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
 	wg           sync.WaitGroup
 }
 
-// Run starts the daemon: opens the SQLite store at dbPath (TODO commit 3) and
-// listens on sockPath. Blocks until OpShutdown / SIGTERM / SIGINT.
+// Run starts the daemon: opens the SQLite store at dbPath and listens on
+// sockPath. Blocks until OpShutdown / SIGTERM / SIGINT.
 func Run(sockPath, dbPath string) error {
-	_ = dbPath // TODO commit 3: store.Open(dbPath)
+	sqliteStore, err := store.Open(dbPath)
+	if err != nil {
+		return fmt.Errorf("open store: %w", err)
+	}
+	defer sqliteStore.Close()
 
 	if err := os.Remove(sockPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("clear stale sock: %w", err)
 	}
 
-	ln, err := net.Listen("unix", sockPath)
+	listener, err := net.Listen("unix", sockPath)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", sockPath, err)
 	}
 
 	server := &server{
-		listener: ln,
+		listener: listener,
+		store:    sqliteStore,
 		shutdown: make(chan struct{}),
 	}
 	server.handlers = map[Op]handler{
@@ -47,6 +55,13 @@ func Run(sockPath, dbPath string) error {
 			// response on the same connection before the conn is torn down.
 			go server.shutdownOnce.Do(func() { close(server.shutdown) })
 			return Response{OK: true}
+		},
+		OpSqliteTest: func(_ Request) Response {
+			summary, err := server.store.Test()
+			if err != nil {
+				return Response{OK: false, Error: err.Error()}
+			}
+			return Response{OK: true, Data: map[string]any{"message": summary}}
 		},
 	}
 
@@ -61,7 +76,7 @@ func Run(sockPath, dbPath string) error {
 	case <-sigCh:
 	}
 
-	_ = ln.Close()
+	_ = listener.Close()
 	server.wg.Wait()
 	_ = os.Remove(sockPath)
 	return nil
