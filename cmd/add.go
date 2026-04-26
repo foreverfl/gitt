@@ -44,6 +44,7 @@ var addCmd = &cobra.Command{
 		} else {
 			fmt.Printf("created worktree (new branch)\n  path:   %s\n  branch: %s\n", target, branch)
 		}
+		fmt.Printf("\nOpen a new terminal, then run:\n  cd %s\n  # start your AI CLI here\n", target)
 		return nil
 	},
 }
