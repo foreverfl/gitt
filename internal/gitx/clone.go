@@ -8,13 +8,27 @@ import (
 )
 
 // CloneBare runs `git clone --bare <url> <dest>`, streaming git's progress to
-// the caller's stdout/stderr.
+// the caller's stdout/stderr. It also installs the standard fetch refspec so
+// `refs/remotes/origin/*` populates on subsequent fetches — `git clone --bare`
+// omits this by default, which breaks ahead/behind tracking in editors and
+// `--force-with-lease` on push.
 func CloneBare(url, dest string) error {
 	cmd := exec.Command("git", "clone", "--bare", url, dest)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("git clone --bare: %w", err)
+	}
+	cfg := exec.Command("git", "--git-dir", dest, "config",
+		"remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*")
+	if out, err := cfg.CombinedOutput(); err != nil {
+		return fmt.Errorf("set remote.origin.fetch: %w: %s", err, strings.TrimSpace(string(out)))
+	}
+	fetch := exec.Command("git", "--git-dir", dest, "fetch", "origin")
+	fetch.Stdout = os.Stdout
+	fetch.Stderr = os.Stderr
+	if err := fetch.Run(); err != nil {
+		return fmt.Errorf("initial fetch: %w", err)
 	}
 	return nil
 }
