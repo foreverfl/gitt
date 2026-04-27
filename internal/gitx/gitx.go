@@ -142,6 +142,11 @@ func BranchExists(branch string) (bool, error) {
 // workdir is the directory git resolves the repo from; pass "" to use the
 // current working directory. clone callers need to set this because cwd at
 // clone time is the user's launch dir, not the new project.
+//
+// For existing branches with an `origin/<branch>` counterpart, upstream
+// tracking is wired to it so editors (VS Code, etc.) show ahead/behind out of
+// the box. New branches are left untracked — they get an upstream when the
+// user first runs `git push -u`.
 func WorktreeAdd(workdir, target, branch string, newBranch bool) error {
 	args := []string{"worktree", "add"}
 	if newBranch {
@@ -155,6 +160,27 @@ func WorktreeAdd(workdir, target, branch string, newBranch bool) error {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("git worktree add: %w", err)
+	}
+	if !newBranch {
+		if err := setUpstreamIfOriginExists(target, branch); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// setUpstreamIfOriginExists wires `branch` to track `origin/<branch>` when
+// that remote ref is present. Bare clones leave local refs/heads/* without
+// tracking config, so without this `git worktree add <existing>` produces a
+// branch that looks "unpublished" to editors even though origin already has it.
+func setUpstreamIfOriginExists(worktreePath, branch string) error {
+	check := exec.Command("git", "-C", worktreePath, "show-ref", "--verify", "--quiet", "refs/remotes/origin/"+branch)
+	if err := check.Run(); err != nil {
+		return nil
+	}
+	set := exec.Command("git", "-C", worktreePath, "branch", "--set-upstream-to=origin/"+branch, branch)
+	if out, err := set.CombinedOutput(); err != nil {
+		return fmt.Errorf("set upstream origin/%s: %w: %s", branch, err, strings.TrimSpace(string(out)))
 	}
 	return nil
 }

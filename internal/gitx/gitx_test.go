@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -56,6 +57,22 @@ func setupBareLayout(t *testing.T) string {
 	return canonPath(t, project)
 }
 
+// setupBareLayoutViaCloneBare uses the production CloneBare path so tests see
+// the real fetch refspec and origin refs that gitt clone produces.
+func setupBareLayoutViaCloneBare(t *testing.T) string {
+	t.Helper()
+	source := setupNormalRepo(t)
+
+	project := t.TempDir()
+	if err := CloneBare(source, filepath.Join(project, ".bare")); err != nil {
+		t.Fatalf("CloneBare: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(project, ".git"), []byte("gitdir: ./.bare\n"), 0o644); err != nil {
+		t.Fatalf("write .git pointer: %v", err)
+	}
+	return canonPath(t, project)
+}
+
 func TestMainRepoRoot(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -101,5 +118,36 @@ func TestMainRepoRoot(t *testing.T) {
 				t.Errorf("MainRepoRoot = %q, want %q", got, want)
 			}
 		})
+	}
+}
+
+func TestWorktreeAdd_SetsUpstreamForExistingRemoteBranch(t *testing.T) {
+	project := setupBareLayoutViaCloneBare(t)
+	target := filepath.Join(project, ".worktrees/main")
+
+	if err := WorktreeAdd(project, target, "main", false); err != nil {
+		t.Fatalf("WorktreeAdd: %v", err)
+	}
+
+	out, err := exec.Command("git", "-C", target, "rev-parse", "--abbrev-ref", "main@{upstream}").Output()
+	if err != nil {
+		t.Fatalf("read upstream: %v", err)
+	}
+	if got, want := strings.TrimSpace(string(out)), "origin/main"; got != want {
+		t.Errorf("upstream = %q, want %q", got, want)
+	}
+}
+
+func TestWorktreeAdd_LeavesNewBranchUntracked(t *testing.T) {
+	project := setupBareLayoutViaCloneBare(t)
+	target := filepath.Join(project, ".worktrees/feat")
+
+	if err := WorktreeAdd(project, target, "feat", true); err != nil {
+		t.Fatalf("WorktreeAdd: %v", err)
+	}
+
+	cmd := exec.Command("git", "-C", target, "rev-parse", "--abbrev-ref", "feat@{upstream}")
+	if err := cmd.Run(); err == nil {
+		t.Errorf("expected new branch %q to have no upstream, but @{upstream} resolved", "feat")
 	}
 }
