@@ -17,6 +17,9 @@ var worktreeUpdateSQL string
 //go:embed sql/worktree/get.sql
 var worktreeGetSQL string
 
+//go:embed sql/worktree/delete.sql
+var worktreeDeleteSQL string
+
 // Worktree is a row of the worktrees table. created_at / updated_at are kept
 // as the raw SQLite TEXT (ISO-8601 UTC) so callers can format or pass them
 // through without imposing a time.Time conversion at the storage layer.
@@ -101,6 +104,18 @@ func (store *Store) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch
 		return Worktree{}, fmt.Errorf("update worktree (%s, %s): %w", repoRoot, oldBranch, err)
 	}
 	return worktree, nil
+}
+
+// DeleteWorktree removes a worktree row identified by (repoRoot, branchName).
+// Returns sql.ErrNoRows wrapped with context when no row matches, so callers
+// can distinguish "already gone" from real failures.
+func (store *Store) DeleteWorktree(repoRoot, branchName string) error {
+	row := store.db.QueryRow(worktreeDeleteSQL, repoRoot, branchName)
+	var id int64
+	if err := row.Scan(&id); err != nil {
+		return fmt.Errorf("delete worktree (%s, %s): %w", repoRoot, branchName, err)
+	}
+	return nil
 }
 
 // ListWorktrees returns every worktree row, sorted by repo then branch.

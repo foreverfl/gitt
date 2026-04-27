@@ -14,6 +14,30 @@ import (
 	"github.com/foreverfl/gitt/internal/worktree"
 )
 
+// Release tells the daemon to drop the worktree row identified by (mainRoot,
+// branch). cmd/remove calls this after `git worktree remove` succeeds so the
+// daemon's view stays in sync with the filesystem.
+func Release(mainRoot, branch string) error {
+	sockpath, err := paths.SockPath()
+	if err != nil {
+		return err
+	}
+	response, err := daemon.Call(sockpath, daemon.Request{
+		Op: daemon.OpRelease,
+		Args: map[string]any{
+			"repo_root":   mainRoot,
+			"branch_name": branch,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if !response.OK {
+		return fmt.Errorf("%s", response.Error)
+	}
+	return nil
+}
+
 // Register tells the running daemon about a worktree. Returns an error if the
 // daemon is unreachable or rejects the request.
 func Register(mainRoot, branch, target string) error {

@@ -112,3 +112,72 @@ func TestUpdateWorktree_PathConflict(t *testing.T) {
 		t.Fatal("expected unique path conflict, got nil")
 	}
 }
+
+func TestDeleteWorktree_Happy(t *testing.T) {
+	store := openTestStore(t)
+	if _, err := store.InsertWorktree(
+		"/repo", "repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
+	); err != nil {
+		t.Fatalf("Insert: %v", err)
+	}
+
+	if err := store.DeleteWorktree("/repo", "feat/foo"); err != nil {
+		t.Fatalf("DeleteWorktree: %v", err)
+	}
+
+	if _, err := store.GetWorktree("/repo", "feat/foo"); !errors.Is(err, sql.ErrNoRows) {
+		t.Errorf("expected row gone (sql.ErrNoRows), got %v", err)
+	}
+}
+
+func TestDeleteWorktree_NoMatch(t *testing.T) {
+	store := openTestStore(t)
+	err := store.DeleteWorktree("/repo", "nope")
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
+
+func TestDeleteWorktree_LeavesOtherRows(t *testing.T) {
+	store := openTestStore(t)
+	if _, err := store.InsertWorktree(
+		"/repo", "repo", "a", "a", "/repo/.worktrees/a",
+	); err != nil {
+		t.Fatalf("Insert a: %v", err)
+	}
+	if _, err := store.InsertWorktree(
+		"/repo", "repo", "b", "b", "/repo/.worktrees/b",
+	); err != nil {
+		t.Fatalf("Insert b: %v", err)
+	}
+
+	if err := store.DeleteWorktree("/repo", "a"); err != nil {
+		t.Fatalf("DeleteWorktree a: %v", err)
+	}
+
+	if _, err := store.GetWorktree("/repo", "b"); err != nil {
+		t.Errorf("row b should still exist, got: %v", err)
+	}
+}
+
+func TestDeleteWorktree_RestrictsToRepo(t *testing.T) {
+	store := openTestStore(t)
+	if _, err := store.InsertWorktree(
+		"/repoA", "repoA", "shared", "shared", "/repoA/.worktrees/shared",
+	); err != nil {
+		t.Fatalf("Insert A/shared: %v", err)
+	}
+	if _, err := store.InsertWorktree(
+		"/repoB", "repoB", "shared", "shared", "/repoB/.worktrees/shared",
+	); err != nil {
+		t.Fatalf("Insert B/shared: %v", err)
+	}
+
+	if err := store.DeleteWorktree("/repoA", "shared"); err != nil {
+		t.Fatalf("DeleteWorktree A/shared: %v", err)
+	}
+
+	if _, err := store.GetWorktree("/repoB", "shared"); err != nil {
+		t.Errorf("repoB shared should still exist, got: %v", err)
+	}
+}

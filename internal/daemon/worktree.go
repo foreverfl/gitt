@@ -118,6 +118,25 @@ func (server *server) handleRenameWorktree(req Request) Response {
 	return Response{OK: true, Data: map[string]any{"worktree": updated}}
 }
 
+// handleRelease removes a worktree row from the database. The filesystem
+// removal is the caller's responsibility (cmd/remove runs `git worktree
+// remove` first); this op only frees the daemon-side bookkeeping. Required
+// args: repo_root, branch_name.
+func (server *server) handleRelease(req Request) Response {
+	repoRoot, err := stringArg(req, "repo_root")
+	if err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	branchName, err := stringArg(req, "branch_name")
+	if err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	if err := server.store.DeleteWorktree(repoRoot, branchName); err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	return Response{OK: true}
+}
+
 // handleListWorktrees returns every persisted worktree row.
 func (server *server) handleListWorktrees(_ Request) Response {
 	worktrees, err := server.store.ListWorktrees()

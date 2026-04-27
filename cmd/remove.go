@@ -6,6 +6,7 @@ import (
 
 	"github.com/foreverfl/gitt/internal/gitx"
 	"github.com/foreverfl/gitt/internal/worktree"
+	"github.com/foreverfl/gitt/internal/worktreeclient"
 	"github.com/spf13/cobra"
 )
 
@@ -35,6 +36,10 @@ var removeCmd = &cobra.Command{
 		if err := gitx.WorktreeRemove(target); err != nil {
 			fmt.Fprintln(os.Stderr, "tip: if the worktree has uncommitted or untracked changes, commit or stash them first.")
 			return err
+		}
+
+		if err := worktreeclient.Release(mainRoot, branch); err != nil {
+			fmt.Fprintf(os.Stderr, "warning: worktree removed but daemon record cleanup failed: %v\n", err)
 		}
 
 		fmt.Printf("removed worktree\n  path:   %s\n  branch: %s\n", target, branch)

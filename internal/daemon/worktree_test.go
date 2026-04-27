@@ -139,6 +139,55 @@ func TestHandleRenameWorktree_RejectsTargetExists(t *testing.T) {
 	}
 }
 
+func TestHandleRelease_DeletesRow(t *testing.T) {
+	repoRoot := setupBareLayout(t)
+	server := newTestServer(t)
+	if _, err := server.store.InsertWorktree(
+		repoRoot, filepath.Base(repoRoot),
+		"feat/foo", "feat-foo",
+		filepath.Join(repoRoot, ".worktrees/feat-foo"),
+	); err != nil {
+		t.Fatalf("InsertWorktree: %v", err)
+	}
+
+	resp := server.handleRelease(Request{
+		Op: OpRelease,
+		Args: map[string]any{
+			"repo_root":   repoRoot,
+			"branch_name": "feat/foo",
+		},
+	})
+	if !resp.OK {
+		t.Fatalf("release failed: %s", resp.Error)
+	}
+
+	rows, err := server.store.ListWorktrees()
+	if err != nil {
+		t.Fatalf("ListWorktrees: %v", err)
+	}
+	for _, row := range rows {
+		if row.BranchName == "feat/foo" {
+			t.Errorf("row still present after release: %+v", row)
+		}
+	}
+}
+
+func TestHandleRelease_RejectsMissing(t *testing.T) {
+	repoRoot := setupBareLayout(t)
+	server := newTestServer(t)
+
+	resp := server.handleRelease(Request{
+		Op: OpRelease,
+		Args: map[string]any{
+			"repo_root":   repoRoot,
+			"branch_name": "ghost",
+		},
+	})
+	if resp.OK {
+		t.Fatal("expected release of non-existent row to fail, got OK")
+	}
+}
+
 func TestHandleRenameWorktree_RejectsUnregistered(t *testing.T) {
 	repoRoot := setupBareLayout(t)
 	server := newTestServer(t)

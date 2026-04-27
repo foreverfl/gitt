@@ -66,6 +66,7 @@ func Run(sockPath, dbPath string) error {
 		OpRegisterWorktree: server.handleRegisterWorktree,
 		OpListWorktrees:    server.handleListWorktrees,
 		OpRenameWorktree:   server.handleRenameWorktree,
+		OpRelease:          server.handleRelease,
 	}
 
 	sigCh := make(chan os.Signal, 1)
