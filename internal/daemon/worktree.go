@@ -1,6 +1,13 @@
 package daemon
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"os"
+
+	"github.com/foreverfl/gitt/internal/gitx"
+	"github.com/foreverfl/gitt/internal/worktree"
+)
 
 // handleRegisterWorktree persists a worktree row from the request args.
 // Required args: repo_root, repo_name, branch_name, safe_branch_name,
@@ -33,6 +40,82 @@ func (server *server) handleRegisterWorktree(req Request) Response {
 		return Response{OK: false, Error: err.Error()}
 	}
 	return Response{OK: true, Data: map[string]any{"worktree": worktree}}
+}
+
+// handleRenameWorktree atomically renames a branch and its worktree folder,
+// then updates the matching row. Required args: repo_root, old_branch,
+// new_branch.
+//
+// Order: branch -m (cheapest, easy to revert) -> worktree move (filesystem,
+// hardest to revert) -> store UPDATE. Each step's failure rolls back the
+// previous successful steps in reverse.
+func (server *server) handleRenameWorktree(req Request) Response {
+	// 1. Get the existing row to check the current worktree path and ensure the repo is registered.
+	repoRoot, err := stringArg(req, "repo_root")
+	if err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	oldBranch, err := stringArg(req, "old_branch")
+	if err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	newBranch, err := stringArg(req, "new_branch")
+	if err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+	if oldBranch == newBranch {
+		return Response{OK: false, Error: "old_branch and new_branch are the same"}
+	}
+
+	// 2. Check the mutation's preconditions
+	existing, err := server.store.GetWorktree(repoRoot, oldBranch)
+	if err != nil {
+		return Response{OK: false, Error: fmt.Sprintf("not registered with gitt: %s", err)}
+	}
+
+	newSafe := worktree.SafeBranch(newBranch)
+	newPath := worktree.Path(repoRoot, newBranch)
+
+	if existing.WorktreePath == newPath {
+		return Response{OK: false, Error: fmt.Sprintf("new branch %q resolves to the same path", newBranch)}
+	}
+	if _, err := os.Stat(newPath); err == nil {
+		return Response{OK: false, Error: fmt.Sprintf("target path already exists: %s", newPath)}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return Response{OK: false, Error: fmt.Sprintf("stat target: %s", err)}
+	}
+
+	// 3. Rename the branch in git. This is the cheapest operation and easiest to
+	if err := gitx.BranchRename(repoRoot, oldBranch, newBranch); err != nil {
+		return Response{OK: false, Error: err.Error()}
+	}
+
+	// 4. Move the worktree folder.
+	if err := gitx.WorktreeMove(repoRoot, existing.WorktreePath, newPath); err != nil {
+		if revertErr := gitx.BranchRename(repoRoot, newBranch, oldBranch); revertErr != nil {
+			return Response{OK: false, Error: fmt.Sprintf("%s; revert branch -m also failed: %s", err, revertErr)}
+		}
+		return Response{OK: false, Error: err.Error()}
+	}
+
+	// 5. Update the store with the new values.
+	updated, err := server.store.UpdateWorktree(repoRoot, oldBranch, newBranch, newSafe, newPath)
+	if err != nil {
+		moveErr := gitx.WorktreeMove(repoRoot, newPath, existing.WorktreePath)
+		branchErr := gitx.BranchRename(repoRoot, newBranch, oldBranch)
+		switch {
+		case moveErr != nil && branchErr != nil:
+			return Response{OK: false, Error: fmt.Sprintf("%s; revert worktree move failed: %s; revert branch -m failed: %s", err, moveErr, branchErr)}
+		case moveErr != nil:
+			return Response{OK: false, Error: fmt.Sprintf("%s; revert worktree move failed: %s", err, moveErr)}
+		case branchErr != nil:
+			return Response{OK: false, Error: fmt.Sprintf("%s; revert branch -m failed: %s", err, branchErr)}
+		default:
+			return Response{OK: false, Error: err.Error()}
+		}
+	}
+
+	return Response{OK: true, Data: map[string]any{"worktree": updated}}
 }
 
 // handleListWorktrees returns every persisted worktree row.

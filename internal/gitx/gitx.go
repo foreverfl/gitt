@@ -171,3 +171,31 @@ func WorktreeRemove(target string) error {
 	}
 	return nil
 }
+
+// BranchRename runs `git branch -m <old> <new>` against the repo at workdir.
+// Pass "" to use the current working directory. Daemon callers pass the main
+// repo root so the rename hits the right repo regardless of where the daemon
+// was started.
+func BranchRename(workdir, oldBranch, newBranch string) error {
+	cmd := exec.Command("git", "branch", "-m", oldBranch, newBranch)
+	cmd.Dir = workdir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git branch -m %s %s: %w: %s", oldBranch, newBranch, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+// WorktreeMove runs `git worktree move <old> <new>` against the repo at
+// workdir. Git refuses to move a worktree from inside itself, so callers must
+// run this from the main repo (or any other worktree). Both paths must be
+// absolute or resolvable from workdir.
+func WorktreeMove(workdir, oldPath, newPath string) error {
+	cmd := exec.Command("git", "worktree", "move", oldPath, newPath)
+	cmd.Dir = workdir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git worktree move %s %s: %w: %s", oldPath, newPath, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}

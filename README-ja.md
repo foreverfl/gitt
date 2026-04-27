@@ -21,6 +21,7 @@ Git, GitHub, Docker に詳しくなくても、ブランチごとに隔離され
 | `gitt off` | デーモン停止 |
 | `gitt add <branch>` | `<repo>/.worktrees/<branch>` に worktree を作成。ブランチが存在すればチェックアウト、なければ新規作成。ブランチ名の `/`・`\` は `-` に変換される。対象ブランチがすでにどこかにチェックアウト済み（例: リポジトリルートの `main`）の場合は、新規作成せず既存パスを通知してデーモンに登録する。**デーモン必須** |
 | `gitt remove <branch>` | 指定ブランチの worktree フォルダを削除 (`git worktree remove`)。**デーモン必須** |
+| `gitt rename <old> <new>` | ブランチと worktree フォルダを同時にリネーム。`<repo>/.worktrees/<old>` → `<repo>/.worktrees/<new>` への移動、ブランチ名の変更、デーモンレコードの更新を一括で実行。**デーモン必須** |
 | `gitt status` | 現在の worktree のリポジトリ、ブランチ、パス、状態 (clean/dirty/rebase/merge/conflict など) を出力 |
 | `gitt sqlite` | デーモンの DB 接続が正常かを確認する SQLite セルフテストを実行。**デーモン必須** |
 | `gitt update` | 最新リリースを取得してインストール |

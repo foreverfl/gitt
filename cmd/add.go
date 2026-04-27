@@ -7,6 +7,7 @@ import (
 
 	"github.com/foreverfl/gitt/internal/gitx"
 	"github.com/foreverfl/gitt/internal/worktree"
+	"github.com/foreverfl/gitt/internal/worktreeclient"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +33,7 @@ var addCmd = &cobra.Command{
 		}
 		if existingPath != "" {
 			fmt.Printf("branch '%s' is already checked out\n  path:   %s\n", branch, existingPath)
-			if err := worktree.Register(mainRoot, branch, existingPath); err != nil {
+			if err := worktreeclient.Register(mainRoot, branch, existingPath); err != nil {
 				fmt.Fprintf(os.Stderr, "warning: daemon registration failed: %v\n", err)
 			}
 			return nil
@@ -51,7 +52,7 @@ var addCmd = &cobra.Command{
 			return err
 		}
 
-		if err := worktree.Register(mainRoot, branch, target); err != nil {
+		if err := worktreeclient.Register(mainRoot, branch, target); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: worktree created but daemon registration failed: %v\n", err)
 		}
 

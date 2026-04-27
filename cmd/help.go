@@ -23,6 +23,7 @@ var helpCommands = []helpEntry{
 	{usage: "clone <url> [dir]", description: "Clone a repo into gitt's bare layout (<dir>/.bare + .worktrees/<default-branch>)"},
 	{usage: "add <branch>", description: "Create a worktree at <repo>/.worktrees/<branch>", requiresDaemon: true},
 	{usage: "remove <branch>", description: "Remove the worktree folder for <branch> (git worktree remove)", requiresDaemon: true},
+	{usage: "rename <old> <new>", description: "Rename a branch and its worktree folder together", requiresDaemon: true},
 	{usage: "status", description: "Show the current worktree's repo, branch, path, and state"},
 	{usage: "sqlite", description: "Run a SQLite self-test against the daemon's database", requiresDaemon: true},
 	{usage: "update", description: "Fetch and install the latest gitt release"},

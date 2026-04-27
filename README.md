@@ -21,6 +21,7 @@ without thinking about worktrees, branches, or compose configuration.
 | `gitt off` | Stop the daemon |
 | `gitt add <branch>` | Create a worktree at `<repo>/.worktrees/<branch>`. Checks out the branch if it exists, creates a new one otherwise. `/` and `\` in branch names are converted to `-`. If the branch is already checked out somewhere (e.g. `main` in the repo root), the existing path is reported and registered with the daemon — no new worktree is created. **Requires daemon** |
 | `gitt remove <branch>` | Remove the worktree folder for the given branch (`git worktree remove`). **Requires daemon** |
+| `gitt rename <old> <new>` | Rename a branch and its worktree folder together. Updates `<repo>/.worktrees/<old>` → `<repo>/.worktrees/<new>`, renames the branch, and updates the daemon record in one step. **Requires daemon** |
 | `gitt status` | Print the current worktree's repository, branch, path, and state (clean/dirty/rebase/merge/conflict, etc.) |
 | `gitt sqlite` | Run a SQLite self-test against the daemon's database to confirm the DB connection is healthy. **Requires daemon** |
 | `gitt update` | Fetch and install the latest gitt release |

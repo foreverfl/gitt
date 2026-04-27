@@ -1,4 +1,8 @@
-package worktree
+// Package worktreeclient holds caller-side helpers that talk to the gitt
+// daemon about worktrees. It is split out from internal/worktree so that
+// internal/worktree stays a pure leaf (path/layout helpers only) and the
+// daemon package can import it without a cycle.
+package worktreeclient
 
 import (
 	"errors"
@@ -7,6 +11,7 @@ import (
 
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/paths"
+	"github.com/foreverfl/gitt/internal/worktree"
 )
 
 // Register tells the running daemon about a worktree. Returns an error if the
@@ -22,7 +27,7 @@ func Register(mainRoot, branch, target string) error {
 			"repo_root":        mainRoot,
 			"repo_name":        filepath.Base(mainRoot),
 			"branch_name":      branch,
-			"safe_branch_name": SafeBranch(branch),
+			"safe_branch_name": worktree.SafeBranch(branch),
 			"worktree_path":    target,
 		},
 	})

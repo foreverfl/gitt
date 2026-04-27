@@ -11,6 +11,12 @@ var worktreeInsertSQL string
 //go:embed sql/worktree/list.sql
 var worktreeListSQL string
 
+//go:embed sql/worktree/update.sql
+var worktreeUpdateSQL string
+
+//go:embed sql/worktree/get.sql
+var worktreeGetSQL string
+
 // Worktree is a row of the worktrees table. created_at / updated_at are kept
 // as the raw SQLite TEXT (ISO-8601 UTC) so callers can format or pass them
 // through without imposing a time.Time conversion at the storage layer.
@@ -43,6 +49,56 @@ func (store *Store) InsertWorktree(repoRoot, repoName, branchName, safeBranchNam
 	)
 	if err := row.Scan(&worktree.ID, &worktree.Status, &worktree.CreatedAt, &worktree.UpdatedAt); err != nil {
 		return Worktree{}, fmt.Errorf("insert worktree: %w", err)
+	}
+	return worktree, nil
+}
+
+// GetWorktree fetches a single worktree row by (repoRoot, branchName).
+// Returns sql.ErrNoRows wrapped with context when no row matches.
+func (store *Store) GetWorktree(repoRoot, branchName string) (Worktree, error) {
+	row := store.db.QueryRow(worktreeGetSQL, repoRoot, branchName)
+	var worktree Worktree
+	if err := row.Scan(
+		&worktree.ID,
+		&worktree.RepoRoot,
+		&worktree.RepoName,
+		&worktree.BranchName,
+		&worktree.SafeBranchName,
+		&worktree.WorktreePath,
+		&worktree.Status,
+		&worktree.CreatedAt,
+		&worktree.UpdatedAt,
+	); err != nil {
+		return Worktree{}, fmt.Errorf("get worktree (%s, %s): %w", repoRoot, branchName, err)
+	}
+	return worktree, nil
+}
+
+// UpdateWorktree renames a worktree row identified by (repoRoot, oldBranch),
+// rewriting branch_name, safe_branch_name, and worktree_path to the new
+// values. Returns the updated record. The unique constraints on
+// (repo_root, branch_name) and worktree_path are enforced by the store; a
+// conflict with another row surfaces as the error. When no row matches,
+// returns sql.ErrNoRows wrapped with context.
+func (store *Store) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, newWorktreePath string) (Worktree, error) {
+	row := store.db.QueryRow(
+		worktreeUpdateSQL,
+		newBranch, newSafeBranch, newWorktreePath,
+		repoRoot, oldBranch,
+	)
+	var worktree Worktree
+	if err := row.Scan(
+		&worktree.ID,
+		&worktree.RepoRoot,
+		&worktree.RepoName,
+		&worktree.BranchName,
+		&worktree.SafeBranchName,
+		&worktree.WorktreePath,
+		&worktree.Status,
+		&worktree.CreatedAt,
+		&worktree.UpdatedAt,
+	); err != nil {
+		return Worktree{}, fmt.Errorf("update worktree (%s, %s): %w", repoRoot, oldBranch, err)
 	}
 	return worktree, nil
 }

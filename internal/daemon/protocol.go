@@ -8,6 +8,7 @@ const (
 	OpShutdown          Op = "shutdown"
 	OpRegisterWorktree  Op = "register_worktree" // persist a worktree row
 	OpListWorktrees     Op = "list_worktrees"    // read all worktree rows
+	OpRenameWorktree    Op = "rename_worktree"   // rename branch + move folder + update row
 	OpRelease           Op = "release"           // delete worktree + free ports
 	OpSqliteTest        Op = "sqlite_test"       // create+insert+select+drop a scratch table
 )
