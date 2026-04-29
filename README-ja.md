@@ -23,7 +23,7 @@ Git, GitHub, Docker に詳しくなくても、ブランチごとに隔離され
 | `gitt remove <branch>` | 指定ブランチの worktree フォルダを削除 (`git worktree remove`)。**デーモン必須** |
 | `gitt rename <old> <new>` | ブランチと worktree フォルダを同時にリネーム。`<repo>/.worktrees/<old>` → `<repo>/.worktrees/<new>` への移動、ブランチ名の変更、デーモンレコードの更新を一括で実行。**デーモン必須** |
 | `gitt status` | 現在の worktree のリポジトリ、ブランチ、パス、状態 (clean/dirty/rebase/merge/conflict など) を出力 |
-| `gitt vscode` | `<repo-root>/<repo-name>.code-workspace` を作成（または更新）。登録済み worktree ごとにブランチ名でラベル付けされたフォルダーエントリを追加。既存の `settings`/`extensions` は保持される。すべての worktree が `.worktrees/` 配下にあり VSCode のタイトルで区別しにくい場合に便利。**デーモン必須** |
+| `gitt vscode` | `<repo-root>/<repo-name>.code-workspace` を作成（または更新）。登録済み worktree ごとにブランチ名でラベル付けされたフォルダーエントリを追加。既存の `settings`/`extensions` は保持される。すべての worktree が `.worktrees/` 配下にあり VSCode のタイトルで区別しにくい場合に便利。bare レイアウト内のどこからでも実行可能（メインルートまたは任意の worktree） — 出力ファイルは常にメインリポジトリのルートに生成される。その後 `code <repo-root>/<repo-name>.code-workspace` で開く（例: `code gitt/gitt.code-workspace`）。`.worktrees/` を直接開くのはこのコマンドが解決しようとしている状況そのものなので避けること。**デーモン必須** |
 | `gitt sqlite` | デーモンの DB 接続が正常かを確認する SQLite セルフテストを実行。**デーモン必須** |
 | `gitt update` | 最新リリースを取得してインストール。デーモン停止 → 登録済み worktree フォルダを強制削除（未コミット・untracked の変更は復元不可）→ 各リポジトリで `git worktree prune` → `~/.gitt/` 削除 → バイナリ差し替え。`-y`/`--yes` で確認プロンプトをスキップ |
 | `gitt version` | インストール済みの gitt バージョンを表示 |

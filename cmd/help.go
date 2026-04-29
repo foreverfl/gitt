@@ -25,7 +25,7 @@ var helpCommands = []helpEntry{
 	{usage: "remove <branch>", description: "Remove the worktree folder for <branch> (git worktree remove)", requiresDaemon: true},
 	{usage: "rename <old> <new>", description: "Rename a branch and its worktree folder together", requiresDaemon: true},
 	{usage: "status", description: "Show the current worktree's repo, branch, path, and state"},
-	{usage: "vscode", description: "Write a <repo>.code-workspace file with one folder per registered worktree", requiresDaemon: true},
+	{usage: "vscode", description: "Write <repo>/<repo>.code-workspace with one folder per worktree. Runs from any path in the repo; output always lands at the main repo root. Open with `code <repo>/<repo>.code-workspace` — don't open `.worktrees` directly", requiresDaemon: true},
 	{usage: "sqlite", description: "Run a SQLite self-test against the daemon's database", requiresDaemon: true},
 	{usage: "update", description: "Fetch and install the latest gitt release"},
 	{usage: "version", description: "Print the installed gitt version"},
