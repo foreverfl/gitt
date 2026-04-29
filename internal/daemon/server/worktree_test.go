@@ -56,6 +56,15 @@ func newTestServer(t *testing.T) *server {
 	return &server{store: sqliteStore}
 }
 
+func mustEncodeArgs(t *testing.T, v any) []byte {
+	t.Helper()
+	raw, err := daemon.EncodeArgs(v)
+	if err != nil {
+		t.Fatalf("EncodeArgs: %v", err)
+	}
+	return raw
+}
+
 func TestHandleRenameWorktree_RenamesFolderBranchAndRow(t *testing.T) {
 	repoRoot := setupBareLayout(t)
 	runGit(t, repoRoot, "worktree", "add", "-q", "-b", "feat/foo", ".worktrees/feat-foo")
@@ -71,11 +80,11 @@ func TestHandleRenameWorktree_RenamesFolderBranchAndRow(t *testing.T) {
 
 	resp := srv.handleRenameWorktree(daemon.Request{
 		Op: daemon.OpRenameWorktree,
-		Args: map[string]any{
-			"repo_root":  repoRoot,
-			"old_branch": "feat/foo",
-			"new_branch": "feat/bar",
-		},
+		Args: mustEncodeArgs(t, daemon.RenameWorktreeArgs{
+			RepoRoot:  repoRoot,
+			OldBranch: "feat/foo",
+			NewBranch: "feat/bar",
+		}),
 	})
 	if !resp.OK {
 		t.Fatalf("rename failed: %s", resp.Error)
@@ -126,11 +135,11 @@ func TestHandleRenameWorktree_RejectsTargetExists(t *testing.T) {
 
 	resp := srv.handleRenameWorktree(daemon.Request{
 		Op: daemon.OpRenameWorktree,
-		Args: map[string]any{
-			"repo_root":  repoRoot,
-			"old_branch": "a",
-			"new_branch": "b",
-		},
+		Args: mustEncodeArgs(t, daemon.RenameWorktreeArgs{
+			RepoRoot:  repoRoot,
+			OldBranch: "a",
+			NewBranch: "b",
+		}),
 	})
 	if resp.OK {
 		t.Fatal("expected rejection when target path exists, got OK")
@@ -153,10 +162,10 @@ func TestHandleRelease_DeletesRow(t *testing.T) {
 
 	resp := srv.handleRelease(daemon.Request{
 		Op: daemon.OpRelease,
-		Args: map[string]any{
-			"repo_root":   repoRoot,
-			"branch_name": "feat/foo",
-		},
+		Args: mustEncodeArgs(t, daemon.ReleaseArgs{
+			RepoRoot:   repoRoot,
+			BranchName: "feat/foo",
+		}),
 	})
 	if !resp.OK {
 		t.Fatalf("release failed: %s", resp.Error)
@@ -179,10 +188,10 @@ func TestHandleRelease_RejectsMissing(t *testing.T) {
 
 	resp := srv.handleRelease(daemon.Request{
 		Op: daemon.OpRelease,
-		Args: map[string]any{
-			"repo_root":   repoRoot,
-			"branch_name": "ghost",
-		},
+		Args: mustEncodeArgs(t, daemon.ReleaseArgs{
+			RepoRoot:   repoRoot,
+			BranchName: "ghost",
+		}),
 	})
 	if resp.OK {
 		t.Fatal("expected release of non-existent row to fail, got OK")
@@ -195,11 +204,11 @@ func TestHandleRenameWorktree_RejectsUnregistered(t *testing.T) {
 
 	resp := srv.handleRenameWorktree(daemon.Request{
 		Op: daemon.OpRenameWorktree,
-		Args: map[string]any{
-			"repo_root":  repoRoot,
-			"old_branch": "nope",
-			"new_branch": "new",
-		},
+		Args: mustEncodeArgs(t, daemon.RenameWorktreeArgs{
+			RepoRoot:  repoRoot,
+			OldBranch: "nope",
+			NewBranch: "new",
+		}),
 	})
 	if resp.OK {
 		t.Fatal("expected rejection for unregistered branch, got OK")

@@ -11,74 +11,57 @@ import (
 )
 
 // handleRegisterWorktree persists a worktree row from the request args.
-// Required args: repo_root, repo_name, branch_name, safe_branch_name,
-// worktree_path. The unique constraint on (repo_root, branch_name) and
-// worktree_path is enforced by the store; conflicts surface as the error.
+// The unique constraint on (repo_root, branch_name) and worktree_path is
+// enforced by the store; conflicts surface as the error.
 func (s *server) handleRegisterWorktree(req daemon.Request) daemon.Response {
-	repoRoot, err := stringArg(req, "repo_root")
-	if err != nil {
+	var args daemon.RegisterWorktreeArgs
+	if err := daemon.DecodeArgs(req, &args); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	repoName, err := stringArg(req, "repo_name")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
-	}
-	branchName, err := stringArg(req, "branch_name")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
-	}
-	safeBranchName, err := stringArg(req, "safe_branch_name")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
-	}
-	worktreePath, err := stringArg(req, "worktree_path")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
+	if args.RepoRoot == "" || args.RepoName == "" || args.BranchName == "" ||
+		args.SafeBranchName == "" || args.WorktreePath == "" {
+		return daemon.Response{OK: false, Error: "register_worktree: missing required arg"}
 	}
 
-	row, err := s.store.InsertWorktree(repoRoot, repoName, branchName, safeBranchName, worktreePath)
+	row, err := s.store.InsertWorktree(args.RepoRoot, args.RepoName, args.BranchName, args.SafeBranchName, args.WorktreePath)
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	return daemon.Response{OK: true, Data: map[string]any{"worktree": row}}
+	data, err := daemon.EncodeData(daemon.WorktreeData{Worktree: row})
+	if err != nil {
+		return daemon.Response{OK: false, Error: err.Error()}
+	}
+	return daemon.Response{OK: true, Data: data}
 }
 
 // handleRenameWorktree atomically renames a branch and its worktree folder,
-// then updates the matching row. Required args: repo_root, old_branch,
-// new_branch.
+// then updates the matching row.
 //
 // Order: branch -m (cheapest, easy to revert) -> worktree move (filesystem,
 // hardest to revert) -> store UPDATE. Each step's failure rolls back the
 // previous successful steps in reverse.
 func (s *server) handleRenameWorktree(req daemon.Request) daemon.Response {
-	// 1. Get the existing row to check the current worktree path and ensure the repo is registered.
-	repoRoot, err := stringArg(req, "repo_root")
-	if err != nil {
+	var args daemon.RenameWorktreeArgs
+	if err := daemon.DecodeArgs(req, &args); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	oldBranch, err := stringArg(req, "old_branch")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
+	if args.RepoRoot == "" || args.OldBranch == "" || args.NewBranch == "" {
+		return daemon.Response{OK: false, Error: "rename_worktree: missing required arg"}
 	}
-	newBranch, err := stringArg(req, "new_branch")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
-	}
-	if oldBranch == newBranch {
+	if args.OldBranch == args.NewBranch {
 		return daemon.Response{OK: false, Error: "old_branch and new_branch are the same"}
 	}
 
-	// 2. Check the mutation's preconditions
-	existing, err := s.store.GetWorktree(repoRoot, oldBranch)
+	existing, err := s.store.GetWorktree(args.RepoRoot, args.OldBranch)
 	if err != nil {
 		return daemon.Response{OK: false, Error: fmt.Sprintf("not registered with gitt: %s", err)}
 	}
 
-	newSafe := worktree.SafeBranch(newBranch)
-	newPath := worktree.Path(repoRoot, newBranch)
+	newSafe := worktree.SafeBranch(args.NewBranch)
+	newPath := worktree.Path(args.RepoRoot, args.NewBranch)
 
 	if existing.WorktreePath == newPath {
-		return daemon.Response{OK: false, Error: fmt.Sprintf("new branch %q resolves to the same path", newBranch)}
+		return daemon.Response{OK: false, Error: fmt.Sprintf("new branch %q resolves to the same path", args.NewBranch)}
 	}
 	if _, err := os.Stat(newPath); err == nil {
 		return daemon.Response{OK: false, Error: fmt.Sprintf("target path already exists: %s", newPath)}
@@ -86,24 +69,21 @@ func (s *server) handleRenameWorktree(req daemon.Request) daemon.Response {
 		return daemon.Response{OK: false, Error: fmt.Sprintf("stat target: %s", err)}
 	}
 
-	// 3. Rename the branch in git. This is the cheapest operation and easiest to
-	if err := gitx.BranchRename(repoRoot, oldBranch, newBranch); err != nil {
+	if err := gitx.BranchRename(args.RepoRoot, args.OldBranch, args.NewBranch); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
 
-	// 4. Move the worktree folder.
-	if err := gitx.WorktreeMove(repoRoot, existing.WorktreePath, newPath); err != nil {
-		if revertErr := gitx.BranchRename(repoRoot, newBranch, oldBranch); revertErr != nil {
+	if err := gitx.WorktreeMove(args.RepoRoot, existing.WorktreePath, newPath); err != nil {
+		if revertErr := gitx.BranchRename(args.RepoRoot, args.NewBranch, args.OldBranch); revertErr != nil {
 			return daemon.Response{OK: false, Error: fmt.Sprintf("%s; revert branch -m also failed: %s", err, revertErr)}
 		}
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
 
-	// 5. Update the store with the new values.
-	updated, err := s.store.UpdateWorktree(repoRoot, oldBranch, newBranch, newSafe, newPath)
+	updated, err := s.store.UpdateWorktree(args.RepoRoot, args.OldBranch, args.NewBranch, newSafe, newPath)
 	if err != nil {
-		moveErr := gitx.WorktreeMove(repoRoot, newPath, existing.WorktreePath)
-		branchErr := gitx.BranchRename(repoRoot, newBranch, oldBranch)
+		moveErr := gitx.WorktreeMove(args.RepoRoot, newPath, existing.WorktreePath)
+		branchErr := gitx.BranchRename(args.RepoRoot, args.NewBranch, args.OldBranch)
 		switch {
 		case moveErr != nil && branchErr != nil:
 			return daemon.Response{OK: false, Error: fmt.Sprintf("%s; revert worktree move failed: %s; revert branch -m failed: %s", err, moveErr, branchErr)}
@@ -116,23 +96,25 @@ func (s *server) handleRenameWorktree(req daemon.Request) daemon.Response {
 		}
 	}
 
-	return daemon.Response{OK: true, Data: map[string]any{"worktree": updated}}
+	data, err := daemon.EncodeData(daemon.WorktreeData{Worktree: updated})
+	if err != nil {
+		return daemon.Response{OK: false, Error: err.Error()}
+	}
+	return daemon.Response{OK: true, Data: data}
 }
 
 // handleRelease removes a worktree row from the database. The filesystem
 // removal is the caller's responsibility (cmd/remove runs `git worktree
-// remove` first); this op only frees the daemon-side bookkeeping. Required
-// args: repo_root, branch_name.
+// remove` first); this op only frees the daemon-side bookkeeping.
 func (s *server) handleRelease(req daemon.Request) daemon.Response {
-	repoRoot, err := stringArg(req, "repo_root")
-	if err != nil {
+	var args daemon.ReleaseArgs
+	if err := daemon.DecodeArgs(req, &args); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	branchName, err := stringArg(req, "branch_name")
-	if err != nil {
-		return daemon.Response{OK: false, Error: err.Error()}
+	if args.RepoRoot == "" || args.BranchName == "" {
+		return daemon.Response{OK: false, Error: "release: missing required arg"}
 	}
-	if err := s.store.DeleteWorktree(repoRoot, branchName); err != nil {
+	if err := s.store.DeleteWorktree(args.RepoRoot, args.BranchName); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
 	return daemon.Response{OK: true}
@@ -144,20 +126,9 @@ func (s *server) handleListWorktrees(_ daemon.Request) daemon.Response {
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	return daemon.Response{OK: true, Data: map[string]any{"worktrees": worktrees}}
-}
-
-func stringArg(req daemon.Request, name string) (string, error) {
-	raw, ok := req.Args[name]
-	if !ok {
-		return "", fmt.Errorf("missing arg: %s", name)
+	data, err := daemon.EncodeData(daemon.ListWorktreesData{Worktrees: worktrees})
+	if err != nil {
+		return daemon.Response{OK: false, Error: err.Error()}
 	}
-	value, ok := raw.(string)
-	if !ok {
-		return "", fmt.Errorf("arg %s must be a string", name)
-	}
-	if value == "" {
-		return "", fmt.Errorf("arg %s must not be empty", name)
-	}
-	return value, nil
+	return daemon.Response{OK: true, Data: data}
 }

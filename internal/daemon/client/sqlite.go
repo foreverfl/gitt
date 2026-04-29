@@ -22,6 +22,9 @@ func SqliteTest() (string, error) {
 	if !response.OK {
 		return "", fmt.Errorf("%s", response.Error)
 	}
-	message, _ := response.Data["message"].(string)
-	return message, nil
+	var data daemon.SqliteTestData
+	if err := daemon.DecodeData(response, &data); err != nil {
+		return "", fmt.Errorf("decode sqlite test: %w", err)
+	}
+	return data.Message, nil
 }

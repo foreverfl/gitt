@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -19,16 +18,17 @@ func RegisterWorktree(mainRoot, branch, target string) error {
 	if err != nil {
 		return err
 	}
-	response, err := Call(sockpath, daemon.Request{
-		Op: daemon.OpRegisterWorktree,
-		Args: map[string]any{
-			"repo_root":        mainRoot,
-			"repo_name":        filepath.Base(mainRoot),
-			"branch_name":      branch,
-			"safe_branch_name": worktree.SafeBranch(branch),
-			"worktree_path":    target,
-		},
+	args, err := daemon.EncodeArgs(daemon.RegisterWorktreeArgs{
+		RepoRoot:       mainRoot,
+		RepoName:       filepath.Base(mainRoot),
+		BranchName:     branch,
+		SafeBranchName: worktree.SafeBranch(branch),
+		WorktreePath:   target,
 	})
+	if err != nil {
+		return err
+	}
+	response, err := Call(sockpath, daemon.Request{Op: daemon.OpRegisterWorktree, Args: args})
 	if err != nil {
 		return err
 	}
@@ -56,10 +56,7 @@ func TryRegisterWorktree(mainRoot, branch, target string) error {
 }
 
 // ListWorktrees fetches every persisted worktree row from the daemon as a
-// typed slice. The daemon serialises []store.Worktree into Response.Data,
-// which arrives over the wire as a generic map; this helper json-round-trips
-// it back into the typed shape so callers don't have to reach into
-// map[string]any themselves.
+// typed slice.
 func ListWorktrees() ([]store.Worktree, error) {
 	sockpath, err := paths.SockPath()
 	if err != nil {
@@ -72,15 +69,11 @@ func ListWorktrees() ([]store.Worktree, error) {
 	if !response.OK {
 		return nil, fmt.Errorf("%s", response.Error)
 	}
-	raw, err := json.Marshal(response.Data["worktrees"])
-	if err != nil {
-		return nil, fmt.Errorf("encode worktrees: %w", err)
-	}
-	var worktrees []store.Worktree
-	if err := json.Unmarshal(raw, &worktrees); err != nil {
+	var data daemon.ListWorktreesData
+	if err := daemon.DecodeData(response, &data); err != nil {
 		return nil, fmt.Errorf("decode worktrees: %w", err)
 	}
-	return worktrees, nil
+	return data.Worktrees, nil
 }
 
 // RenameWorktree asks the daemon to rename a branch and move its worktree
@@ -91,14 +84,15 @@ func RenameWorktree(mainRoot, oldBranch, newBranch string) error {
 	if err != nil {
 		return err
 	}
-	response, err := Call(sockpath, daemon.Request{
-		Op: daemon.OpRenameWorktree,
-		Args: map[string]any{
-			"repo_root":  mainRoot,
-			"old_branch": oldBranch,
-			"new_branch": newBranch,
-		},
+	args, err := daemon.EncodeArgs(daemon.RenameWorktreeArgs{
+		RepoRoot:  mainRoot,
+		OldBranch: oldBranch,
+		NewBranch: newBranch,
 	})
+	if err != nil {
+		return err
+	}
+	response, err := Call(sockpath, daemon.Request{Op: daemon.OpRenameWorktree, Args: args})
 	if err != nil {
 		return err
 	}
@@ -116,13 +110,14 @@ func ReleaseWorktree(mainRoot, branch string) error {
 	if err != nil {
 		return err
 	}
-	response, err := Call(sockpath, daemon.Request{
-		Op: daemon.OpRelease,
-		Args: map[string]any{
-			"repo_root":   mainRoot,
-			"branch_name": branch,
-		},
+	args, err := daemon.EncodeArgs(daemon.ReleaseArgs{
+		RepoRoot:   mainRoot,
+		BranchName: branch,
 	})
+	if err != nil {
+		return err
+	}
+	response, err := Call(sockpath, daemon.Request{Op: daemon.OpRelease, Args: args})
 	if err != nil {
 		return err
 	}
