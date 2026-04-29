@@ -6,6 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	// migrate_test exercises Open + MigrateOnDisk end-to-end; it leans on
+	// repo only as a fixture writer (Insert/List). The dependency goes
+	// store_test → repo → store at compile time, so there's no cycle: this
+	// is the test build, the store package itself never imports repo.
+	"github.com/foreverfl/gitt/internal/store/repo"
 )
 
 // withFakeMigration installs a v1→v2 migrator for the duration of the test
@@ -73,7 +79,7 @@ func TestOpen_PreVersioningV0Upgrades(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = store.Close() })
 
-	worktrees, err := store.ListWorktrees()
+	worktrees, err := repo.New(store.DB()).ListWorktrees()
 	if err != nil {
 		t.Fatalf("ListWorktrees: %v", err)
 	}
@@ -119,7 +125,7 @@ func TestMigrateOnDisk_HappyPathPreservesData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := repo.New(store.DB()).InsertWorktree(
 		"/repo", "repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
@@ -191,7 +197,7 @@ func TestMigrateOnDisk_FailureRestoresOriginal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := repo.New(store.DB()).InsertWorktree(
 		"/repo", "repo", "main", "main", "/repo/.worktrees/main",
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
@@ -225,7 +231,7 @@ func TestMigrateOnDisk_FailureRestoresOriginal(t *testing.T) {
 		t.Fatalf("reopen after failed migration: %v", err)
 	}
 	t.Cleanup(func() { _ = store.Close() })
-	worktrees, err := store.ListWorktrees()
+	worktrees, err := repo.New(store.DB()).ListWorktrees()
 	if err != nil {
 		t.Fatalf("ListWorktrees: %v", err)
 	}

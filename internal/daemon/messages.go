@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/foreverfl/gitt/internal/store"
+	"github.com/foreverfl/gitt/internal/store/repo"
 )
 
 // Per-op payload types. Each Op that carries args or response data has its
@@ -25,7 +25,7 @@ type RegisterWorktreeArgs struct {
 // WorktreeData carries a single worktree row back to the client. Used as the
 // data half of OpRegisterWorktree and OpRenameWorktree.
 type WorktreeData struct {
-	Worktree store.Worktree `json:"worktree"`
+	Worktree repo.Worktree `json:"worktree"`
 }
 
 // --- OpRenameWorktree ---
@@ -46,7 +46,7 @@ type ReleaseArgs struct {
 // --- OpListWorktrees ---
 
 type ListWorktreesData struct {
-	Worktrees []store.Worktree `json:"worktrees"`
+	Worktrees []repo.Worktree `json:"worktrees"`
 }
 
 // --- OpSqliteTest ---

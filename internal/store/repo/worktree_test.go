@@ -1,4 +1,4 @@
-package store
+package repo
 
 import (
 	"database/sql"
@@ -6,28 +6,30 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/foreverfl/gitt/internal/store"
 )
 
-func openTestStore(t *testing.T) *Store {
+func openTestRepo(t *testing.T) *Repo {
 	t.Helper()
-	store, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	s, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	t.Cleanup(func() { _ = store.Close() })
-	return store
+	t.Cleanup(func() { _ = s.Close() })
+	return New(s.DB())
 }
 
 func TestUpdateWorktree_Happy(t *testing.T) {
-	store := openTestStore(t)
-	inserted, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	inserted, err := r.InsertWorktree(
 		"/repo", "repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
 	)
 	if err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
 
-	updated, err := store.UpdateWorktree(
+	updated, err := r.UpdateWorktree(
 		"/repo", "feat/foo",
 		"feat/bar", "feat-bar", "/repo/.worktrees/feat-bar",
 	)
@@ -56,8 +58,8 @@ func TestUpdateWorktree_Happy(t *testing.T) {
 }
 
 func TestUpdateWorktree_NoMatch(t *testing.T) {
-	store := openTestStore(t)
-	_, err := store.UpdateWorktree(
+	r := openTestRepo(t)
+	_, err := r.UpdateWorktree(
 		"/repo", "missing",
 		"new", "new", "/repo/.worktrees/new",
 	)
@@ -67,19 +69,19 @@ func TestUpdateWorktree_NoMatch(t *testing.T) {
 }
 
 func TestUpdateWorktree_BranchNameConflict(t *testing.T) {
-	store := openTestStore(t)
-	if _, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "a", "a", "/repo/.worktrees/a",
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "b", "b", "/repo/.worktrees/b",
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
 
-	_, err := store.UpdateWorktree(
+	_, err := r.UpdateWorktree(
 		"/repo", "a",
 		"b", "b", "/repo/.worktrees/b-other",
 	)
@@ -92,19 +94,19 @@ func TestUpdateWorktree_BranchNameConflict(t *testing.T) {
 }
 
 func TestUpdateWorktree_PathConflict(t *testing.T) {
-	store := openTestStore(t)
-	if _, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "a", "a", "/repo/.worktrees/a",
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "b", "b", "/repo/.worktrees/b",
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
 
-	_, err := store.UpdateWorktree(
+	_, err := r.UpdateWorktree(
 		"/repo", "a",
 		"a-renamed", "a-renamed", "/repo/.worktrees/b",
 	)
@@ -114,70 +116,70 @@ func TestUpdateWorktree_PathConflict(t *testing.T) {
 }
 
 func TestDeleteWorktree_Happy(t *testing.T) {
-	store := openTestStore(t)
-	if _, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
 
-	if err := store.DeleteWorktree("/repo", "feat/foo"); err != nil {
+	if err := r.DeleteWorktree("/repo", "feat/foo"); err != nil {
 		t.Fatalf("DeleteWorktree: %v", err)
 	}
 
-	if _, err := store.GetWorktree("/repo", "feat/foo"); !errors.Is(err, sql.ErrNoRows) {
+	if _, err := r.GetWorktree("/repo", "feat/foo"); !errors.Is(err, sql.ErrNoRows) {
 		t.Errorf("expected row gone (sql.ErrNoRows), got %v", err)
 	}
 }
 
 func TestDeleteWorktree_NoMatch(t *testing.T) {
-	store := openTestStore(t)
-	err := store.DeleteWorktree("/repo", "nope")
+	r := openTestRepo(t)
+	err := r.DeleteWorktree("/repo", "nope")
 	if !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("expected sql.ErrNoRows, got %v", err)
 	}
 }
 
 func TestDeleteWorktree_LeavesOtherRows(t *testing.T) {
-	store := openTestStore(t)
-	if _, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "a", "a", "/repo/.worktrees/a",
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := r.InsertWorktree(
 		"/repo", "repo", "b", "b", "/repo/.worktrees/b",
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
 
-	if err := store.DeleteWorktree("/repo", "a"); err != nil {
+	if err := r.DeleteWorktree("/repo", "a"); err != nil {
 		t.Fatalf("DeleteWorktree a: %v", err)
 	}
 
-	if _, err := store.GetWorktree("/repo", "b"); err != nil {
+	if _, err := r.GetWorktree("/repo", "b"); err != nil {
 		t.Errorf("row b should still exist, got: %v", err)
 	}
 }
 
 func TestDeleteWorktree_RestrictsToRepo(t *testing.T) {
-	store := openTestStore(t)
-	if _, err := store.InsertWorktree(
+	r := openTestRepo(t)
+	if _, err := r.InsertWorktree(
 		"/repoA", "repoA", "shared", "shared", "/repoA/.worktrees/shared",
 	); err != nil {
 		t.Fatalf("Insert A/shared: %v", err)
 	}
-	if _, err := store.InsertWorktree(
+	if _, err := r.InsertWorktree(
 		"/repoB", "repoB", "shared", "shared", "/repoB/.worktrees/shared",
 	); err != nil {
 		t.Fatalf("Insert B/shared: %v", err)
 	}
 
-	if err := store.DeleteWorktree("/repoA", "shared"); err != nil {
+	if err := r.DeleteWorktree("/repoA", "shared"); err != nil {
 		t.Fatalf("DeleteWorktree A/shared: %v", err)
 	}
 
-	if _, err := store.GetWorktree("/repoB", "shared"); err != nil {
+	if _, err := r.GetWorktree("/repoB", "shared"); err != nil {
 		t.Errorf("repoB shared should still exist, got: %v", err)
 	}
 }

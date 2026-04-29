@@ -15,13 +15,14 @@ import (
 
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/store"
+	"github.com/foreverfl/gitt/internal/store/repo"
 )
 
 type handler func(req daemon.Request) daemon.Response
 
 type server struct {
 	listener     net.Listener
-	store        *store.Store
+	repo         *repo.Repo
 	handlers     map[daemon.Op]handler
 	shutdown     chan struct{}
 	shutdownOnce sync.Once
@@ -48,7 +49,7 @@ func Run(sockPath, dbPath string) error {
 
 	srv := &server{
 		listener: listener,
-		store:    sqliteStore,
+		repo:     repo.New(sqliteStore.DB()),
 		shutdown: make(chan struct{}),
 	}
 	srv.handlers = map[daemon.Op]handler{

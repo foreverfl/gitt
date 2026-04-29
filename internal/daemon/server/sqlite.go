@@ -6,7 +6,7 @@ import "github.com/foreverfl/gitt/internal/daemon"
 // summary line in Response.Data. cmd/sqlite uses this to confirm the daemon's
 // database connection is healthy end-to-end.
 func (s *server) handleSqliteTest(_ daemon.Request) daemon.Response {
-	summary, err := s.store.Test()
+	summary, err := s.repo.SelfTest()
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}

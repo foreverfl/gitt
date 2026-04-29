@@ -9,6 +9,7 @@ import (
 
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/store"
+	"github.com/foreverfl/gitt/internal/store/repo"
 )
 
 func runGit(t *testing.T, dir string, args ...string) {
@@ -53,7 +54,7 @@ func newTestServer(t *testing.T) *server {
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { _ = sqliteStore.Close() })
-	return &server{store: sqliteStore}
+	return &server{repo: repo.New(sqliteStore.DB())}
 }
 
 func mustEncodeArgs(t *testing.T, v any) []byte {
@@ -70,7 +71,7 @@ func TestHandleRenameWorktree_RenamesFolderBranchAndRow(t *testing.T) {
 	runGit(t, repoRoot, "worktree", "add", "-q", "-b", "feat/foo", ".worktrees/feat-foo")
 
 	srv := newTestServer(t)
-	if _, err := srv.store.InsertWorktree(
+	if _, err := srv.repo.InsertWorktree(
 		repoRoot, filepath.Base(repoRoot),
 		"feat/foo", "feat-foo",
 		filepath.Join(repoRoot, ".worktrees/feat-foo"),
@@ -108,7 +109,7 @@ func TestHandleRenameWorktree_RenamesFolderBranchAndRow(t *testing.T) {
 		t.Errorf("branch feat/bar not found, git output: %q", out)
 	}
 
-	row, err := srv.store.GetWorktree(repoRoot, "feat/bar")
+	row, err := srv.repo.GetWorktree(repoRoot, "feat/bar")
 	if err != nil {
 		t.Fatalf("GetWorktree(feat/bar): %v", err)
 	}
@@ -126,7 +127,7 @@ func TestHandleRenameWorktree_RejectsTargetExists(t *testing.T) {
 	runGit(t, repoRoot, "worktree", "add", "-q", "-b", "b", ".worktrees/b")
 
 	srv := newTestServer(t)
-	if _, err := srv.store.InsertWorktree(
+	if _, err := srv.repo.InsertWorktree(
 		repoRoot, filepath.Base(repoRoot),
 		"a", "a", filepath.Join(repoRoot, ".worktrees/a"),
 	); err != nil {
@@ -152,7 +153,7 @@ func TestHandleRenameWorktree_RejectsTargetExists(t *testing.T) {
 func TestHandleRelease_DeletesRow(t *testing.T) {
 	repoRoot := setupBareLayout(t)
 	srv := newTestServer(t)
-	if _, err := srv.store.InsertWorktree(
+	if _, err := srv.repo.InsertWorktree(
 		repoRoot, filepath.Base(repoRoot),
 		"feat/foo", "feat-foo",
 		filepath.Join(repoRoot, ".worktrees/feat-foo"),
@@ -171,7 +172,7 @@ func TestHandleRelease_DeletesRow(t *testing.T) {
 		t.Fatalf("release failed: %s", resp.Error)
 	}
 
-	rows, err := srv.store.ListWorktrees()
+	rows, err := srv.repo.ListWorktrees()
 	if err != nil {
 		t.Fatalf("ListWorktrees: %v", err)
 	}

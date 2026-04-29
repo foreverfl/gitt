@@ -22,7 +22,7 @@ func (s *server) handleRegisterWorktree(req daemon.Request) daemon.Response {
 		return daemon.Response{OK: false, Error: "register_worktree: missing required arg"}
 	}
 
-	row, err := s.store.InsertWorktree(args.RepoRoot, args.RepoName, args.BranchName, args.SafeBranchName, args.WorktreePath)
+	row, err := s.repo.InsertWorktree(args.RepoRoot, args.RepoName, args.BranchName, args.SafeBranchName, args.WorktreePath)
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
@@ -51,7 +51,7 @@ func (s *server) handleRenameWorktree(req daemon.Request) daemon.Response {
 		return daemon.Response{OK: false, Error: "old_branch and new_branch are the same"}
 	}
 
-	existing, err := s.store.GetWorktree(args.RepoRoot, args.OldBranch)
+	existing, err := s.repo.GetWorktree(args.RepoRoot, args.OldBranch)
 	if err != nil {
 		return daemon.Response{OK: false, Error: fmt.Sprintf("not registered with gitt: %s", err)}
 	}
@@ -79,7 +79,7 @@ func (s *server) handleRenameWorktree(req daemon.Request) daemon.Response {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
 
-	updated, err := s.store.UpdateWorktree(args.RepoRoot, args.OldBranch, args.NewBranch, newSafe, newPath)
+	updated, err := s.repo.UpdateWorktree(args.RepoRoot, args.OldBranch, args.NewBranch, newSafe, newPath)
 	if err != nil {
 		moveErr := gitx.WorktreeMove(args.RepoRoot, newPath, existing.WorktreePath)
 		branchErr := gitx.BranchRename(args.RepoRoot, args.NewBranch, args.OldBranch)
@@ -113,7 +113,7 @@ func (s *server) handleRelease(req daemon.Request) daemon.Response {
 	if args.RepoRoot == "" || args.BranchName == "" {
 		return daemon.Response{OK: false, Error: "release: missing required arg"}
 	}
-	if err := s.store.DeleteWorktree(args.RepoRoot, args.BranchName); err != nil {
+	if err := s.repo.DeleteWorktree(args.RepoRoot, args.BranchName); err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}
 	return daemon.Response{OK: true}
@@ -121,7 +121,7 @@ func (s *server) handleRelease(req daemon.Request) daemon.Response {
 
 // handleListWorktrees returns every persisted worktree row.
 func (s *server) handleListWorktrees(_ daemon.Request) daemon.Response {
-	worktrees, err := s.store.ListWorktrees()
+	worktrees, err := s.repo.ListWorktrees()
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}

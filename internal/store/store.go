@@ -84,6 +84,13 @@ func (store *Store) Close() error {
 	return store.db.Close()
 }
 
+// DB exposes the underlying *sql.DB so internal/store/repo can run queries
+// against it. Lifecycle (open, close, migrations) stays on Store; per-table
+// CRUD lives on Repo.
+func (store *Store) DB() *sql.DB {
+	return store.db
+}
+
 // openWithPragmas opens path and sets the connection-level pragmas every
 // gitt code path expects (WAL journal, foreign keys on). It does not touch
 // schema or user_version, so callers can use it both for first-time setup

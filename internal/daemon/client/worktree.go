@@ -8,7 +8,7 @@ import (
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/gitx"
 	"github.com/foreverfl/gitt/internal/paths"
-	"github.com/foreverfl/gitt/internal/store"
+	"github.com/foreverfl/gitt/internal/store/repo"
 )
 
 // RegisterWorktree tells the running daemon about a worktree. Returns an error
@@ -57,7 +57,7 @@ func TryRegisterWorktree(mainRoot, branch, target string) error {
 
 // ListWorktrees fetches every persisted worktree row from the daemon as a
 // typed slice.
-func ListWorktrees() ([]store.Worktree, error) {
+func ListWorktrees() ([]repo.Worktree, error) {
 	sockpath, err := paths.SockPath()
 	if err != nil {
 		return nil, err

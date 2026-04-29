@@ -1,4 +1,4 @@
-package store
+package repo
 
 import (
 	_ "embed"
@@ -38,7 +38,7 @@ type Worktree struct {
 // InsertWorktree persists a new worktree row and returns the populated record
 // (id and timestamps filled in by SQLite). Returns an error when (repo_root,
 // branch_name) or worktree_path is already taken.
-func (store *Store) InsertWorktree(repoRoot, repoName, branchName, safeBranchName, worktreePath string) (Worktree, error) {
+func (r *Repo) InsertWorktree(repoRoot, repoName, branchName, safeBranchName, worktreePath string) (Worktree, error) {
 	worktree := Worktree{
 		RepoRoot:       repoRoot,
 		RepoName:       repoName,
@@ -46,7 +46,7 @@ func (store *Store) InsertWorktree(repoRoot, repoName, branchName, safeBranchNam
 		SafeBranchName: safeBranchName,
 		WorktreePath:   worktreePath,
 	}
-	row := store.db.QueryRow(
+	row := r.db.QueryRow(
 		worktreeInsertSQL,
 		repoRoot, repoName, branchName, safeBranchName, worktreePath,
 	)
@@ -58,8 +58,8 @@ func (store *Store) InsertWorktree(repoRoot, repoName, branchName, safeBranchNam
 
 // GetWorktree fetches a single worktree row by (repoRoot, branchName).
 // Returns sql.ErrNoRows wrapped with context when no row matches.
-func (store *Store) GetWorktree(repoRoot, branchName string) (Worktree, error) {
-	row := store.db.QueryRow(worktreeGetSQL, repoRoot, branchName)
+func (r *Repo) GetWorktree(repoRoot, branchName string) (Worktree, error) {
+	row := r.db.QueryRow(worktreeGetSQL, repoRoot, branchName)
 	var worktree Worktree
 	if err := row.Scan(
 		&worktree.ID,
@@ -83,8 +83,8 @@ func (store *Store) GetWorktree(repoRoot, branchName string) (Worktree, error) {
 // (repo_root, branch_name) and worktree_path are enforced by the store; a
 // conflict with another row surfaces as the error. When no row matches,
 // returns sql.ErrNoRows wrapped with context.
-func (store *Store) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, newWorktreePath string) (Worktree, error) {
-	row := store.db.QueryRow(
+func (r *Repo) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, newWorktreePath string) (Worktree, error) {
+	row := r.db.QueryRow(
 		worktreeUpdateSQL,
 		newBranch, newSafeBranch, newWorktreePath,
 		repoRoot, oldBranch,
@@ -109,8 +109,8 @@ func (store *Store) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch
 // DeleteWorktree removes a worktree row identified by (repoRoot, branchName).
 // Returns sql.ErrNoRows wrapped with context when no row matches, so callers
 // can distinguish "already gone" from real failures.
-func (store *Store) DeleteWorktree(repoRoot, branchName string) error {
-	row := store.db.QueryRow(worktreeDeleteSQL, repoRoot, branchName)
+func (r *Repo) DeleteWorktree(repoRoot, branchName string) error {
+	row := r.db.QueryRow(worktreeDeleteSQL, repoRoot, branchName)
 	var id int64
 	if err := row.Scan(&id); err != nil {
 		return fmt.Errorf("delete worktree (%s, %s): %w", repoRoot, branchName, err)
@@ -119,8 +119,8 @@ func (store *Store) DeleteWorktree(repoRoot, branchName string) error {
 }
 
 // ListWorktrees returns every worktree row, sorted by repo then branch.
-func (store *Store) ListWorktrees() ([]Worktree, error) {
-	rows, err := store.db.Query(worktreeListSQL)
+func (r *Repo) ListWorktrees() ([]Worktree, error) {
+	rows, err := r.db.Query(worktreeListSQL)
 	if err != nil {
 		return nil, fmt.Errorf("list worktrees: %w", err)
 	}
