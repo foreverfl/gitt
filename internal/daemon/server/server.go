@@ -60,13 +60,7 @@ func Run(sockPath, dbPath string) error {
 			go srv.shutdownOnce.Do(func() { close(srv.shutdown) })
 			return daemon.Response{OK: true}
 		},
-		daemon.OpSqliteTest: func(_ daemon.Request) daemon.Response {
-			summary, err := srv.store.Test()
-			if err != nil {
-				return daemon.Response{OK: false, Error: err.Error()}
-			}
-			return daemon.Response{OK: true, Data: map[string]any{"message": summary}}
-		},
+		daemon.OpSqliteTest:       srv.handleSqliteTest,
 		daemon.OpRegisterWorktree: srv.handleRegisterWorktree,
 		daemon.OpListWorktrees:    srv.handleListWorktrees,
 		daemon.OpRenameWorktree:   srv.handleRenameWorktree,

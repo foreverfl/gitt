@@ -108,25 +108,6 @@ func RenameWorktree(mainRoot, oldBranch, newBranch string) error {
 	return nil
 }
 
-// SqliteTest asks the daemon to run its scratch-table self-test and returns
-// the human-readable summary line. Used by `gitt sqlite` to confirm the
-// daemon's database connection is healthy.
-func SqliteTest() (string, error) {
-	sockpath, err := paths.SockPath()
-	if err != nil {
-		return "", err
-	}
-	response, err := Call(sockpath, daemon.Request{Op: daemon.OpSqliteTest})
-	if err != nil {
-		return "", err
-	}
-	if !response.OK {
-		return "", fmt.Errorf("%s", response.Error)
-	}
-	message, _ := response.Data["message"].(string)
-	return message, nil
-}
-
 // ReleaseWorktree tells the daemon to drop the worktree row identified by
 // (mainRoot, branch). cmd/remove calls this after `git worktree remove`
 // succeeds so the daemon's view stays in sync with the filesystem.
