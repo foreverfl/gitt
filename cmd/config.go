@@ -9,11 +9,11 @@ import (
 
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Edit the gitt config file in $EDITOR",
-	Long: "Opens ~/.gitt/config.toml in $VISUAL, $EDITOR, or vi.\n\n" +
+	Short: "Open ~/.gitt/config.toml in your editor",
+	Long: "Opens ~/.gitt/config.toml in $VISUAL, $EDITOR, or vi (tried in that order).\n\n" +
 		"On first run the file is created from the built-in defaults so\n" +
-		"the editor always has something to open. Edits take effect on\n" +
-		"the next command that reads config.",
+		"the editor always has something to open.\n\n" +
+		"Does not require the gitt daemon to be running.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := config.EnsureFile()
 		if err != nil {
