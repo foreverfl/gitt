@@ -1,11 +1,13 @@
 package daemon
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 
 	"github.com/foreverfl/gitt/internal/paths"
+	"github.com/foreverfl/gitt/internal/store"
 	"github.com/foreverfl/gitt/internal/worktree"
 )
 
@@ -50,6 +52,34 @@ func TryRegisterWorktree(mainRoot, branch, target string) error {
 		return err
 	}
 	return RegisterWorktree(mainRoot, branch, target)
+}
+
+// ListWorktrees fetches every persisted worktree row from the daemon as a
+// typed slice. The daemon serialises []store.Worktree into Response.Data,
+// which arrives over the wire as a generic map; this helper json-round-trips
+// it back into the typed shape so callers don't have to reach into
+// map[string]any themselves.
+func ListWorktrees() ([]store.Worktree, error) {
+	sockpath, err := paths.SockPath()
+	if err != nil {
+		return nil, err
+	}
+	response, err := Call(sockpath, Request{Op: OpListWorktrees})
+	if err != nil {
+		return nil, err
+	}
+	if !response.OK {
+		return nil, fmt.Errorf("%s", response.Error)
+	}
+	raw, err := json.Marshal(response.Data["worktrees"])
+	if err != nil {
+		return nil, fmt.Errorf("encode worktrees: %w", err)
+	}
+	var worktrees []store.Worktree
+	if err := json.Unmarshal(raw, &worktrees); err != nil {
+		return nil, fmt.Errorf("decode worktrees: %w", err)
+	}
+	return worktrees, nil
 }
 
 // ReleaseWorktree tells the daemon to drop the worktree row identified by
