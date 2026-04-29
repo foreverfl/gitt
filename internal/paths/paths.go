@@ -50,11 +50,3 @@ func DBPath() (string, error) {
 	}
 	return filepath.Join(dir, "gitt.db"), nil
 }
-
-func VersionPath() (string, error) {
-	dir, err := RuntimeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "VERSION"), nil
-}

@@ -31,7 +31,7 @@ registered worktree folders on disk are also left untouched.
 
 Use -y/--yes to skip the confirmation ui.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		current := paths.InstalledVersion()
+		current := release.Installed()
 
 		fmt.Println("checking latest release...")
 		latest, err := release.LatestTag()
@@ -115,9 +115,7 @@ Use -y/--yes to skip the confirmation ui.`,
 			return fmt.Errorf("replace binary: %w", err)
 		}
 
-		if vpath, verr := paths.VersionPath(); verr == nil {
-			_ = os.WriteFile(vpath, []byte(latest+"\n"), 0o644)
-		}
+		_ = release.MarkInstalled(latest)
 
 		fmt.Printf("updated to %s\n", latest)
 
