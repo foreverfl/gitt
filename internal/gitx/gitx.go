@@ -135,13 +135,18 @@ func BranchExists(branch string) (bool, error) {
 	}
 }
 
-// WorktreeAdd runs `git worktree add`, streaming git's progress output to the
-// caller's stdout/stderr. When newBranch is true, a new branch is created via
-// `-b`; otherwise the existing ref is checked out into the worktree.
+// WorktreeAdd runs `git worktree add`, streaming git's progress output to
+// stderr. When newBranch is true, a new branch is created via `-b`; otherwise
+// the existing ref is checked out into the worktree.
 //
 // workdir is the directory git resolves the repo from; pass "" to use the
 // current working directory. clone callers need to set this because cwd at
 // clone time is the user's launch dir, not the new project.
+//
+// Both git's stdout and stderr are routed to stderr so callers like `gitt add
+// --print-path` can keep stdout reserved for a single machine-readable line.
+// Without this, git's "HEAD is now at <sha> ..." line would mix with the
+// printed worktree path and break shell wrappers that `cd "$(gitt add ...)"`.
 //
 // For existing branches with an `origin/<branch>` counterpart, upstream
 // tracking is wired to it so editors (VS Code, etc.) show ahead/behind out of
@@ -156,7 +161,7 @@ func WorktreeAdd(workdir, target, branch string, newBranch bool) error {
 	}
 	cmd := exec.Command("git", args...)
 	cmd.Dir = workdir
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = os.Stderr
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("git worktree add: %w", err)
