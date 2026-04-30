@@ -2,9 +2,32 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 )
+
+// renameSqliteDB renames a SQLite database file together with its WAL and
+// SHM sidecars, treating a missing sidecar as a no-op. SQLite resolves the
+// WAL/SHM by appending "-wal"/"-shm" to the open path, so renaming only
+// the main file leaves the sidecars at the source location and lets them
+// shadow the destination: the old WAL frames get applied to the moved-in
+// file and reads silently see the previous database's state. We hit this
+// during the v1→v2 rollout when an upgrading daemon's gitt.db-wal stayed
+// at the original path and made the post-migration db look like v1 again.
+func renameSqliteDB(from, to string) error {
+	if err := os.Rename(from, to); err != nil {
+		return err
+	}
+	for _, suffix := range []string{"-wal", "-shm"} {
+		src, dst := from+suffix, to+suffix
+		if err := os.Rename(src, dst); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("rename %s: %w", src, err)
+		}
+	}
+	return nil
+}
 
 // migrator copies data from a database opened at schema v(N) to one opened
 // at schema v(N+1). The destination already has the v(N+1) schema applied,
@@ -61,14 +84,15 @@ func migrateV1ToV2(oldDB, newDB *sql.DB) error {
 // toVersion using a safe backup/swap flow that never overwrites the original
 // file in place:
 //
-//  1. Rename <dbpath> → <dbpath>.old. The original is parked at .old; <dbpath>
-//     no longer exists, so any crash from this point on leaves an obvious
-//     recovery file rather than a half-written primary.
+//  1. Rename <dbpath> → <dbpath>.old (with WAL/SHM sidecars; see
+//     renameSqliteDB). The original is parked at .old; <dbpath> no longer
+//     exists, so any crash from this point on leaves an obvious recovery
+//     file rather than a half-written primary.
 //  2. Create <dbpath>.new and apply the v(toVersion) schema + user_version
 //     stamp.
 //  3. Open <dbpath>.old read/write and run each registered migrator from
 //     fromVersion up to toVersion-1, copying rows into <dbpath>.new.
-//  4. On success, rename <dbpath>.new → <dbpath> (the new primary), then
+//  4. On success, rename <dbpath>.new → <dbpath> (again with sidecars), then
 //     remove <dbpath>.old plus its WAL/SHM sidecars.
 //  5. On any failure, remove <dbpath>.new and restore <dbpath>.old → <dbpath>
 //     so the next daemon start sees the original database untouched.
@@ -91,7 +115,7 @@ func MigrateOnDisk(dbpath string, fromVersion, toVersion int) error {
 	_ = os.Remove(newpath + "-wal")
 	_ = os.Remove(newpath + "-shm")
 
-	if err := os.Rename(dbpath, oldpath); err != nil {
+	if err := renameSqliteDB(dbpath, oldpath); err != nil {
 		return fmt.Errorf("backup db (%s → %s): %w", dbpath, oldpath, err)
 	}
 
@@ -102,7 +126,7 @@ func MigrateOnDisk(dbpath string, fromVersion, toVersion int) error {
 		_ = os.Remove(newpath)
 		_ = os.Remove(newpath + "-wal")
 		_ = os.Remove(newpath + "-shm")
-		if restoreErr := os.Rename(oldpath, dbpath); restoreErr != nil {
+		if restoreErr := renameSqliteDB(oldpath, dbpath); restoreErr != nil {
 			return fmt.Errorf("%w (and restoring backup failed: %v)", cause, restoreErr)
 		}
 		return cause
@@ -145,7 +169,7 @@ func MigrateOnDisk(dbpath string, fromVersion, toVersion int) error {
 		return abort(fmt.Errorf("close new db: %w", err))
 	}
 
-	if err := os.Rename(newpath, dbpath); err != nil {
+	if err := renameSqliteDB(newpath, dbpath); err != nil {
 		return abort(fmt.Errorf("install new db (%s → %s): %w", newpath, dbpath, err))
 	}
 

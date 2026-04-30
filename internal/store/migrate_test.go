@@ -114,6 +114,63 @@ func TestOpen_NewerSchemaRefused(t *testing.T) {
 	}
 }
 
+// TestMigrateOnDisk_MovesSidecarsAlongsideMainFile guards the v1→v2 bug
+// where the daemon's leftover gitt.db-wal/-shm at the original location
+// got applied to the freshly migrated dbpath, making it read as the
+// pre-migration version. We seed unique placeholder bytes at <dbpath>-wal
+// and <dbpath>-shm before the migration and verify those bytes do not
+// remain at <dbpath>-wal/-shm afterwards — they must have moved to
+// <oldpath>-wal/-shm during the backup rename so they cannot shadow the
+// new database.
+func TestMigrateOnDisk_MovesSidecarsAlongsideMainFile(t *testing.T) {
+	dir := t.TempDir()
+	dbpath := filepath.Join(dir, "data.db")
+	store, err := Open(dbpath)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	if _, err := repo.New(store.DB()).InsertWorktree(
+		"/repo", "repo", "main", "main", "/repo/.worktrees/main",
+	); err != nil {
+		t.Fatalf("Insert: %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	// Use suffix-distinct sentinels so a post-migration read can prove the
+	// pre-migration content didn't survive at the original sidecar path.
+	sentinel := map[string][]byte{
+		"-wal": []byte("pre-migration-wal-marker"),
+		"-shm": []byte("pre-migration-shm-marker"),
+	}
+	for suffix, payload := range sentinel {
+		if err := os.WriteFile(dbpath+suffix, payload, 0o644); err != nil {
+			t.Fatalf("seed sidecar %s: %v", dbpath+suffix, err)
+		}
+	}
+
+	withFakeMigration(t, 1, func(oldDB, newDB *sql.DB) error { return nil })
+
+	if err := MigrateOnDisk(dbpath, 1, 2); err != nil {
+		t.Fatalf("MigrateOnDisk: %v", err)
+	}
+
+	for suffix, payload := range sentinel {
+		path := dbpath + suffix
+		data, err := os.ReadFile(path)
+		if errors.Is(err, os.ErrNotExist) {
+			continue // sidecar legitimately gone after migration cleanup
+		}
+		if err != nil {
+			t.Fatalf("read %s: %v", path, err)
+		}
+		if string(data) == string(payload) {
+			t.Errorf("%s still holds pre-migration content; sidecar was not moved alongside the backup rename", path)
+		}
+	}
+}
+
 func TestMigrateOnDisk_HappyPathPreservesData(t *testing.T) {
 	dir := t.TempDir()
 	dbpath := filepath.Join(dir, "data.db")
