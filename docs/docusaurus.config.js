@@ -5,20 +5,21 @@ const {themes} = require('prism-react-renderer');
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Knowledge Base',
-  tagline: 'Knowledge Base Documentation',
+  title: 'gitt',
+  tagline: 'A friendly git CLI wrapper',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://kb-base.mogumogu.dev',
+  url: 'https://foreverfl.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/gitt/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'foreverfl', // Usually your GitHub org/user name.
-  projectName: 'kb-base', // Usually your repo name.
+  projectName: 'gitt', // Usually your repo name.
+  trailingSlash: false,
 
   onBrokenLinks: 'throw',
 
@@ -73,14 +74,14 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/foreverfl/kb-base/tree/main/',
+            'https://github.com/foreverfl/gitt/tree/main/docs/',
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/foreverfl/kb-base/tree/main/',
+            'https://github.com/foreverfl/gitt/tree/main/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -115,9 +116,9 @@ const config = {
       // Replace with your project's social card
       image: 'img/docusaurus-social-card.jpg',
       navbar: {
-        title: 'Knowledge Base',
+        title: 'gitt',
         logo: {
-          alt: 'Knowledge Base Logo',
+          alt: 'gitt Logo',
           src: 'img/docusaurus-logo.svg',
         },
         items: [
@@ -139,7 +140,7 @@ const config = {
             position: 'right',
           },
           {
-            href: 'https://github.com/foreverfl/kb-base',
+            href: 'https://github.com/foreverfl/gitt',
             position: 'right',
             className: 'header-github-link',
             'aria-label': 'GitHub repository',
@@ -188,12 +189,12 @@ const config = {
               },
               {
                 label: 'GitHub',
-                href: 'https://github.com/foreverfl/kb-base',
+                href: 'https://github.com/foreverfl/gitt',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Knowledge Base. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} mogumogu. Built with Docusaurus.`,
       },
       colorMode: {
         defaultMode: 'dark',
