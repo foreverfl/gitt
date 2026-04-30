@@ -1,0 +1,302 @@
+/**
+ * Documentation Pages
+ * ===================
+ * Styles for documentation and blog page layouts
+ */
+
+/* ==========================================================================
+   PAGE CONTAINER
+   ========================================================================== */
+
+/* Doc page main content */
+.docMainContainer_node_modules-\@docusaurus-theme-classic-lib-theme-DocPage-Layout-Main-styles-module {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+/* Blog main content */
+.blogMainContainer {
+  @apply px-4 md:px-8 lg:px-12;
+}
+
+/* Doc item container */
+div[class*="docItemContainer"] {
+  @apply px-4 md:px-6;
+}
+
+/* ==========================================================================
+   EDIT THIS PAGE SECTION
+   ========================================================================== */
+
+/* Edit metadata row container */
+.theme-doc-footer-edit-meta-row {
+  @apply flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-6 border-t border-gray-200;
+}
+
+[data-theme='dark'] .theme-doc-footer-edit-meta-row {
+  @apply border-gray-700;
+}
+
+/* Edit link */
+.theme-edit-this-page {
+  @apply inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-green-600 transition-all duration-150;
+}
+
+[data-theme='dark'] .theme-edit-this-page {
+  @apply text-gray-300 bg-gray-800 border-gray-600 hover:bg-gray-700 hover:text-green-400;
+}
+
+/* Edit icon */
+.theme-edit-this-page svg {
+  @apply w-4 h-4;
+}
+
+/* Last updated info */
+.theme-last-updated {
+  @apply text-sm text-gray-600;
+}
+
+[data-theme='dark'] .theme-last-updated {
+  @apply text-gray-400;
+}
+
+.theme-last-updated b {
+  @apply font-medium text-gray-900;
+}
+
+[data-theme='dark'] .theme-last-updated b {
+  @apply text-white;
+}
+
+/* ==========================================================================
+   PAGINATION NAV
+   ========================================================================== */
+
+/* Pagination container */
+.pagination-nav {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4 py-8 border-t border-gray-200;
+}
+
+[data-theme='dark'] .pagination-nav {
+  @apply border-gray-700;
+}
+
+/* Pagination item */
+.pagination-nav__item {
+  @apply block;
+}
+
+/* Pagination link */
+.pagination-nav__link {
+  @apply flex flex-col p-6 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-green-300 transition-all duration-150 h-full;
+}
+
+[data-theme='dark'] .pagination-nav__link {
+  @apply bg-gray-800 border-gray-700 hover:bg-gray-700 hover:border-green-600;
+}
+
+/* Pagination sublabel (Previous/Next) */
+.pagination-nav__sublabel {
+  @apply text-sm font-medium text-gray-600 mb-2;
+}
+
+[data-theme='dark'] .pagination-nav__sublabel {
+  @apply text-gray-400;
+}
+
+/* Pagination label (actual page title) */
+.pagination-nav__label {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+[data-theme='dark'] .pagination-nav__label {
+  @apply text-white;
+}
+
+/* Previous item (align left) */
+.pagination-nav__item--prev .pagination-nav__link {
+  @apply items-start text-left;
+}
+
+/* Next item (align right) */
+.pagination-nav__item--next .pagination-nav__link {
+  @apply items-end text-right;
+}
+
+/* Hover effect on pagination links */
+.pagination-nav__link:hover {
+  @apply no-underline shadow-md;
+}
+
+.pagination-nav__link:hover .pagination-nav__label {
+  @apply text-green-600;
+}
+
+[data-theme='dark'] .pagination-nav__link:hover .pagination-nav__label {
+  @apply text-green-400;
+}
+
+/* ==========================================================================
+   TAG LIST (for blog posts)
+   ========================================================================== */
+
+/* Tags container */
+.theme-doc-footer-tags-row {
+  @apply py-4;
+}
+
+/* Tag list */
+ul[class*="tags"] {
+  @apply flex flex-wrap gap-2 list-none p-0 m-0;
+}
+
+/* Individual tag */
+.tag {
+  @apply inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-green-100 hover:text-green-700 transition-colors duration-150;
+}
+
+[data-theme='dark'] .tag {
+  @apply text-gray-300 bg-gray-800 hover:bg-green-900/50 hover:text-green-400;
+}
+
+/* ==========================================================================
+   BLOG POST SPECIFIC
+   ========================================================================== */
+
+/* Blog post container */
+article[class*="blogPostPage"] {
+  @apply px-4 md:px-8 lg:px-12;
+}
+
+/* Blog sidebar container styling */
+.col--3 {
+  @apply sticky top-20 h-fit;
+}
+
+/* Blog sidebar content box */
+.col--3 aside {
+  @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+}
+
+[data-theme='dark'] .col--3 aside {
+  @apply bg-gray-800/50 border-gray-700 backdrop-blur-sm;
+}
+
+/* Blog sidebar sections */
+.col--3 section {
+  @apply mb-6 last:mb-0;
+}
+
+/* Blog sidebar section titles */
+.col--3 h2,
+.col--3 h3 {
+  @apply text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3;
+}
+
+[data-theme='dark'] .col--3 h2,
+[data-theme='dark'] .col--3 h3 {
+  @apply text-gray-100;
+}
+
+/* Blog sidebar links */
+.col--3 a {
+  @apply text-gray-600 hover:text-green-600 transition-colors duration-150 text-sm;
+}
+
+[data-theme='dark'] .col--3 a {
+  @apply text-gray-400 hover:text-green-400;
+}
+
+/* Blog sidebar list items */
+.col--3 ul {
+  @apply space-y-2 list-none p-0;
+}
+
+.col--3 li {
+  @apply text-sm text-gray-600;
+}
+
+[data-theme='dark'] .col--3 li {
+  @apply text-gray-400;
+}
+
+/* Blog post header */
+header[class*="blogPostTitle"] {
+  @apply mb-8;
+}
+
+/* Blog post footer */
+footer[class*="blogPostFooter"] {
+  @apply mt-12 pt-8 border-t border-gray-200;
+}
+
+[data-theme='dark'] footer[class*="blogPostFooter"] {
+  @apply border-gray-700;
+}
+
+/* Author info */
+div[class*="blogPostAuthor"] {
+  @apply flex items-center gap-3 mb-6;
+}
+
+div[class*="blogPostAuthor"] img {
+  @apply w-12 h-12 rounded-full border-2 border-gray-200;
+}
+
+[data-theme='dark'] div[class*="blogPostAuthor"] img {
+  @apply border-gray-700;
+}
+
+/* ==========================================================================
+   CONTENT WIDTH CONSTRAINTS
+   ========================================================================== */
+
+/* Ensure proper max-width for readability */
+.markdown {
+  @apply max-w-none;
+}
+
+article .container {
+  @apply px-4 md:px-6 lg:px-8;
+}
+
+/* Doc page specific container padding */
+.docusaurus-mt-lg {
+  @apply mt-8;
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 996px) {
+  /* Mobile padding adjustments */
+  .docs-wrapper .main-wrapper,
+  article .main-wrapper,
+  .blogMainContainer,
+  article[class*="blogPostPage"] {
+    @apply px-4;
+  }
+
+  div[class*="docItemContainer"] {
+    @apply px-3;
+  }
+
+  /* Stack pagination items on mobile */
+  .pagination-nav {
+    @apply grid-cols-1;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Smaller padding on very small screens */
+  .docs-wrapper .main-wrapper,
+  article .main-wrapper,
+  .blogMainContainer,
+  article[class*="blogPostPage"] {
+    @apply px-3;
+  }
+
+  div[class*="docItemContainer"] {
+    @apply px-2;
+  }
+}

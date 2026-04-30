@@ -1,0 +1,19 @@
+# Authors configuration file for Docusaurus blog
+
+admin:
+  name: Admin
+  title: システム管理者
+  url: https://github.com
+  image_url: https://github.com/github.png
+
+mogumogu:
+  name: MoguMogu
+  title: 開発者
+  url: https://github.com/mogumogu
+  image_url: https://github.com/mogumogu.png
+
+yourname:
+  name: Your Name
+  title: コントリビューター
+  url: https://github.com/yourusername
+  image_url: https://github.com/yourusername.png

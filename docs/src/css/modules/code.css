@@ -1,0 +1,103 @@
+/**
+ * Code & Syntax Highlighting
+ * ==========================
+ * Code blocks, inline code, and syntax highlighting styles
+ */
+
+/* ==========================================================================
+   INLINE CODE
+   ========================================================================== */
+
+.markdown code {
+  @apply text-green-600 bg-gray-100 px-1 py-0.5 rounded text-sm;
+}
+
+[data-theme='dark'] .markdown code {
+  @apply text-green-400 bg-gray-800;
+}
+
+/* ==========================================================================
+   CODE BLOCKS
+   ========================================================================== */
+
+/* Base code block styles */
+pre {
+  @apply rounded-xl border border-gray-200;
+}
+
+[data-theme='dark'] pre {
+  @apply border-gray-700;
+}
+
+/* Markdown code blocks */
+.markdown pre {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-6;
+}
+
+[data-theme='dark'] .markdown pre {
+  @apply bg-gray-800;
+}
+
+/* Code inside pre blocks */
+.markdown pre code {
+  @apply text-gray-100 bg-transparent p-0;
+}
+
+/* ==========================================================================
+   CODE BLOCK ACTIONS (Copy button, Language label)
+   ========================================================================== */
+
+/* Code block container - ensure proper stacking */
+div[class*="codeBlockContainer"],
+div[class*="theme-code-block"] {
+  @apply relative;
+}
+
+/* Button group - language label and copy button */
+div[class*="buttonGroup"] {
+  @apply flex items-center justify-end gap-2;
+}
+
+/* Mobile: Make button group take full width to prevent overlap */
+@media (max-width: 768px) {
+  /* Code block container adjustments */
+  div[class*="codeBlockContainer"] {
+    @apply flex flex-col;
+  }
+
+  /* Ensure code block content area has proper spacing */
+  div[class*="codeBlockContent"] {
+    @apply flex flex-col;
+  }
+
+  /* Button group positioning - force to be above code and right-aligned */
+  div[class*="buttonGroup"] {
+    @apply relative w-full flex justify-end items-center gap-2;
+    @apply px-4 py-2 mb-2;
+    /* Reset any absolute positioning */
+    position: relative;
+    top: auto;
+    right: auto;
+    /* Move button group above the code block */
+    order: -1;
+  }
+
+  /* Pre tag - ensure it comes after button group */
+  div[class*="codeBlockContainer"] pre,
+  .prism-code {
+    @apply mt-0;
+    position: relative;
+    order: 1;
+  }
+
+  /* Language label on mobile */
+  div[class*="codeBlockTitle"] {
+    @apply text-sm font-medium text-gray-400;
+  }
+
+  /* Copy button on mobile */
+  button[class*="copyButton"],
+  button[class*="clean-btn"] {
+    @apply shrink-0;
+  }
+}

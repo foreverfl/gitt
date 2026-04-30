@@ -1,0 +1,51 @@
+/**
+ * Base & Reset Styles
+ * ===================
+ * Global resets, base elements, and fundamental styles
+ */
+
+/* Global transitions for smooth theme switching */
+* {
+  @apply transition-colors duration-200 ease-in-out;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  @apply outline outline-2 outline-green-500 outline-offset-2;
+}
+
+/* External link icon styling */
+.iconExternalLink_YyBE,
+svg.iconExternalLink_YyBE {
+  @apply inline-block ml-1 align-baseline;
+  width: 0.875rem; /* 14px */
+  height: 0.875rem;
+  vertical-align: text-top;
+}
+
+/* External links with icon */
+a[target="_blank"] svg.iconExternalLink_YyBE,
+a[rel*="noopener"] svg.iconExternalLink_YyBE {
+  @apply ml-1;
+}
+
+/* Custom scrollbar for Webkit browsers */
+::-webkit-scrollbar {
+  @apply w-2.5 h-2.5;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-track {
+  @apply bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 rounded-full hover:bg-gray-500;
+}
+
+[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 hover:bg-gray-500;
+}

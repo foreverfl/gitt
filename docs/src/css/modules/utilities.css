@@ -1,0 +1,15 @@
+/**
+ * Utility Classes
+ * ===============
+ * Helper classes and accessibility utilities
+ */
+
+/* ==========================================================================
+   ACCESSIBILITY
+   ========================================================================== */
+
+/* Skip to content link for screen readers */
+.skip-to-content {
+  @apply absolute -left-[9999px] bg-green-600 text-white px-4 py-2 rounded-lg z-50;
+  @apply focus:absolute focus:left-4 focus:top-4;
+}

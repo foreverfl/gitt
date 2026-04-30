@@ -1,0 +1,46 @@
+/**
+ * ==========================================================================
+ * VERSION DROPDOWN STYLING
+ * ==========================================================================
+ * Custom styles for the Docusaurus version dropdown only
+ * ==========================================================================
+ */
+
+/* Version Dropdown Button - Only target the version dropdown specifically */
+.navbar__item .dropdown__link[class*="version"] {
+  @apply px-3 py-1.5 rounded-lg font-medium text-sm;
+  @apply bg-linear-to-r from-blue-500/10 to-purple-500/10;
+  @apply border border-blue-500/20 hover:border-blue-500/40;
+  @apply text-blue-600 dark:text-blue-400;
+  @apply transition-all duration-200;
+}
+
+/* Style the version dropdown button specifically */
+.navbar__item.dropdown .navbar__link[aria-label*="version"],
+.navbar__item.dropdown .navbar__link[aria-label*="Version"] {
+  @apply px-3 py-1.5 rounded-lg font-medium text-sm;
+  @apply bg-linear-to-r from-blue-500/10 to-purple-500/10;
+  @apply border border-blue-500/20 hover:border-blue-500/40;
+  @apply text-blue-600 dark:text-blue-400;
+}
+
+/* Canary Version Badge in dropdown */
+.dropdown__link[href*="releases"] {
+  @apply relative;
+  @apply bg-linear-to-r from-orange-500/10 to-red-500/10;
+  @apply hover:from-orange-500/20 hover:to-red-500/20;
+  @apply text-orange-600 dark:text-orange-400;
+  @apply border-l-2 border-orange-500;
+}
+
+/* Animation for dropdown */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

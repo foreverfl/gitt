@@ -1,0 +1,348 @@
+/**
+ * UI Components
+ * =============
+ * Buttons, Cards, Tables, and other reusable components
+ */
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.button {
+  @apply font-semibold rounded-full px-6 py-2.5 transition-all duration-200;
+}
+
+.button--primary {
+  @apply bg-green-600 text-white shadow-lg hover:bg-green-700 hover:shadow-xl;
+}
+
+.button--secondary {
+  @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+[data-theme='dark'] .button--secondary {
+  @apply bg-gray-800 text-gray-300 hover:bg-gray-700;
+}
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg;
+}
+
+[data-theme='dark'] .card {
+  @apply bg-gray-800 border-gray-700;
+}
+
+/* ==========================================================================
+   TABLES
+   ========================================================================== */
+
+table {
+  @apply w-full border-collapse;
+}
+
+th {
+  @apply bg-gray-50 font-semibold text-left p-3 border-b-2 border-gray-200;
+}
+
+[data-theme='dark'] th {
+  @apply bg-gray-800 border-gray-700;
+}
+
+td {
+  @apply p-3 border-b border-gray-100;
+}
+
+[data-theme='dark'] td {
+  @apply border-gray-800;
+}
+
+/* ==========================================================================
+   SEARCH BOX
+   ========================================================================== */
+
+/* Search input with Tailwind utilities */
+.navbar__search-input {
+  @apply appearance-none inline-block;
+  @apply w-50 h-8;
+  @apply rounded-full border-0;
+  @apply pl-9 pr-2 py-0;
+  @apply text-base cursor-text;
+  @apply bg-gray-100 text-gray-700;
+  @apply transition-all duration-200;
+
+  /* Search icon background */
+  background-image: var(--ifm-navbar-search-input-icon);
+  background-repeat: no-repeat;
+  background-position: 0.75rem center;
+  background-size: 1rem 1rem;
+}
+
+/* Focus state */
+.navbar__search-input:focus {
+  @apply outline-none ring-2 ring-green-500/50;
+  @apply w-60 bg-white;
+}
+
+/* Hover state */
+.navbar__search-input:hover {
+  @apply bg-gray-50;
+}
+
+/* Dark mode styles */
+[data-theme='dark'] .navbar__search-input {
+  @apply bg-gray-800 text-gray-300;
+}
+
+[data-theme='dark'] .navbar__search-input:focus {
+  @apply bg-gray-900 ring-green-400;
+}
+
+[data-theme='dark'] .navbar__search-input:hover {
+  @apply bg-gray-700;
+}
+
+/* Placeholder text */
+.navbar__search-input::placeholder {
+  @apply text-gray-500;
+}
+
+[data-theme='dark'] .navbar__search-input::placeholder {
+  @apply text-gray-400;
+}
+
+/* ==========================================================================
+   HOMEPAGE FEATURES SECTION
+   ========================================================================== */
+
+/* Override Tailwind's dark mode specificity with higher specificity */
+.homepage-features-section {
+  background-color: white;
+  color: black;
+}
+
+.homepage-features-section h2,
+.homepage-features-section h3 {
+  color: black;
+}
+
+.homepage-features-section p {
+  color: rgba(0, 0, 0, 0.85);
+}
+
+[data-theme='dark'] .homepage-features-section {
+  background-color: rgba(17, 24, 39, 0.5);
+  color: white;
+}
+
+[data-theme='dark'] .homepage-features-section h2,
+[data-theme='dark'] .homepage-features-section h3 {
+  color: white;
+}
+
+[data-theme='dark'] .homepage-features-section p {
+  color: rgb(156, 163, 175);
+}
+
+/* Feature cards inside homepage section */
+.homepage-features-section .bg-white h3 {
+  color: white;
+}
+
+.homepage-features-section .bg-white p {
+  color: white;
+}
+
+[data-theme='dark'] .homepage-features-section .dark\:bg-gray-800 h3 {
+  color: white;
+}
+
+[data-theme='dark'] .homepage-features-section .dark\:bg-gray-800 p {
+  color: rgb(156, 163, 175);
+}
+
+/* ==========================================================================
+   LANGUAGE SELECTOR
+   ========================================================================== */
+
+/* Dropdown Container - ensure it's positioned relative */
+.dropdown {
+  @apply relative;
+}
+
+/* Language Dropdown Toggle */
+.navbar__link[aria-haspopup="true"] {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg font-medium;
+  @apply transition-all duration-200;
+}
+
+/* Hover state */
+.navbar__link[aria-haspopup="true"]:hover {
+  background-color: rgba(16, 185, 129, 0.1); 
+  color: var(--ifm-color-primary-dark);
+}
+
+[data-theme='dark'] .navbar__link[aria-haspopup="true"]:hover {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: var(--ifm-color-primary);
+}
+
+/* Language Icon Styling */
+.navbar__link[aria-haspopup="true"] svg.iconLanguage_sdhG {
+  @apply text-gray-600;
+}
+
+[data-theme='dark'] .navbar__link[aria-haspopup="true"] svg.iconLanguage_sdhG {
+  @apply text-gray-400;
+}
+
+/* Dropdown Menu Container - adjusted positioning */
+.dropdown__menu {
+  @apply absolute right-0 z-50;
+  @apply min-w-[180px] py-2;
+  @apply bg-white rounded-lg shadow-lg border border-gray-200;
+  @apply opacity-0 invisible scale-95;
+  @apply transition-all duration-200 origin-top-right;
+  top: calc(100% - 4px); /* Slightly overlap to maintain hover */
+}
+
+[data-theme='dark'] .dropdown__menu {
+  @apply bg-gray-800 border-gray-700;
+}
+
+/* Show dropdown when active - with pseudo element for hover bridge */
+.dropdown--hoverable:hover .dropdown__menu,
+.dropdown--show .dropdown__menu {
+  @apply opacity-100 visible scale-100;
+}
+
+/* Create invisible bridge to maintain hover between button and dropdown */
+.dropdown--hoverable::before {
+  content: "";
+  @apply absolute left-0 right-0 h-2 invisible;
+  top: 100%;
+}
+
+.dropdown--hoverable:hover::before {
+  @apply visible;
+}
+
+/* Language Options List */
+.dropdown__menu ul {
+  @apply list-none p-0 m-0;
+}
+
+/* Individual Language Option */
+.dropdown__link {
+  @apply block px-4 py-2.5 text-sm font-medium;
+  @apply text-gray-700;
+  @apply transition-colors duration-150;
+}
+
+.dropdown__link:hover {
+  background-color: rgba(16, 185, 129, 0.08); /* Very light green background */
+  color: var(--ifm-color-primary-dark);
+}
+
+[data-theme='dark'] .dropdown__link {
+  @apply text-gray-300;
+}
+
+[data-theme='dark'] .dropdown__link:hover {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: var(--ifm-color-primary);
+}
+
+/* Active Language */
+.dropdown__link--active {
+  @apply text-green-600 bg-green-50;
+  @apply relative;
+}
+
+[data-theme='dark'] .dropdown__link--active {
+  @apply text-green-400 bg-green-900/20;
+}
+
+/* Active Language Indicator */
+.dropdown__link--active::before {
+  content: "✓";
+  @apply absolute left-2 text-green-600;
+}
+
+[data-theme='dark'] .dropdown__link--active::before {
+  @apply text-green-400;
+}
+
+/* Add padding for checkmark */
+.dropdown__link--active {
+  @apply pl-8;
+}
+
+/* Language Divider */
+.dropdown__menu li + li {
+  @apply border-t border-gray-100;
+}
+
+[data-theme='dark'] .dropdown__menu li + li {
+  @apply border-gray-800;
+}
+
+/* Add dropdown arrow indicator */
+.navbar__link[aria-haspopup="true"]::after {
+  content: "";
+  @apply ml-1 w-0 h-0;
+  @apply border-4 border-transparent border-t-current;
+  @apply transition-transform duration-200;
+}
+
+/* Rotate arrow when dropdown is open */
+.dropdown--show .navbar__link[aria-haspopup="true"]::after {
+  @apply transform rotate-180;
+}
+
+/* Keep dropdown open when hovering over menu */
+.dropdown--hoverable .dropdown__menu:hover {
+  @apply opacity-100 visible scale-100;
+}
+
+/* Ensure dropdown stays interactive */
+.dropdown__menu {
+  pointer-events: none;
+}
+
+.dropdown--hoverable:hover .dropdown__menu,
+.dropdown--show .dropdown__menu,
+.dropdown__menu:hover {
+  pointer-events: auto;
+}
+
+/* Alternative approach with JavaScript click - add active state */
+.navbar__link[aria-expanded="true"] + .dropdown__menu,
+.navbar__link[aria-expanded="true"] ~ .dropdown__menu {
+  @apply opacity-100 visible scale-100;
+  pointer-events: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .dropdown__menu {
+    @apply min-w-[150px];
+  }
+
+  .dropdown__link {
+    @apply px-3 py-2 text-xs;
+  }
+
+  /* On mobile, use click instead of hover */
+  .dropdown--hoverable:hover .dropdown__menu {
+    @apply opacity-0 invisible scale-95;
+  }
+
+  .dropdown--show .dropdown__menu,
+  .navbar__link[aria-expanded="true"] + .dropdown__menu {
+    @apply opacity-100 visible scale-100;
+  }
+}

@@ -1,0 +1,577 @@
+/**
+ * ==========================================================================
+ * LAYOUT COMPONENTS
+ * ==========================================================================
+ *
+ * This module contains all major layout components:
+ * - Navbar: Top navigation bar with logo, links, and controls
+ * - Footer: Bottom footer with links and copyright
+ * - Sidebar: Documentation navigation sidebar
+ * - Article: Main content area
+ *
+ * ==========================================================================
+ */
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+
+.navbar {
+  @apply shadow-sm backdrop-blur-lg bg-white/95;
+}
+
+.navbar__inner{
+  @apply px-4 md:px-[15px];
+}
+
+.navbar__title {
+  @apply pl-2 md:pl-2.5 text-base md:text-lg;
+}
+
+[data-theme='dark'] .navbar {
+  @apply bg-slate-900/95 border-b border-white/10;
+}
+
+.navbar__link {
+  @apply font-medium rounded-lg px-2 py-1.5 md:px-3 md:py-2 transition-all duration-150 ease-in-out text-sm md:text-base;
+}
+
+.navbar__link:hover {
+  @apply bg-gray-100;
+}
+
+[data-theme='dark'] .navbar__link:hover {
+  @apply bg-gray-800;
+}
+
+.navbar__link--active {
+  @apply text-green-600;
+}
+
+[data-theme='dark'] .navbar__link--active {
+  @apply text-green-400;
+}
+
+.navbar__logo img {
+  height: 1.75rem; /* 28px */
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .navbar__logo img {
+    height: 2rem; /* 32px */
+  }
+}
+
+.theme-layout-navbar-left {
+  @apply gap-1 md:gap-2;
+}
+
+.theme-layout-navbar-right {
+  @apply gap-1 md:gap-2;
+}
+
+/* Control navbar item order on the right side */
+.navbar__items--right {
+  @apply flex items-center;
+}
+
+/* Set order for right-side navbar items */
+/* Order: Version/Locale dropdowns -> GitHub (10) -> ColorMode (20) -> Search (30) */
+.header-github-link {
+  order: 10;
+}
+
+.colorModeToggle_kzyk,
+.toggle_k5YO {
+  order: 20;
+}
+
+.navbarSearchContainer_dFOU,
+.navbar__search {
+  order: 30;
+}
+
+/* GitHub Icon Link - Using ::before pseudo-element with mask-image */
+.header-github-link {
+  @apply flex items-center justify-center w-9 h-9 md:w-12 md:h-12 rounded-lg hover:bg-gray-100 transition-colors;
+}
+
+[data-theme='dark'] .header-github-link {
+  @apply hover:bg-gray-800;
+}
+
+.header-github-link:hover {
+  @apply no-underline;
+}
+
+.header-github-link::before {
+  content: "";
+  background-color: var(--ifm-navbar-link-color);
+  width: 24px;
+  height: 24px;
+  transition: background-color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
+  display: block;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+@media (min-width: 768px) {
+  .header-github-link::before {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+[data-theme='dark'] .header-github-link::before {
+  background-color: var(--ifm-color-gray-400);
+}
+
+.header-github-link:hover::before {
+  background-color: var(--ifm-navbar-link-hover-color);
+}
+
+/* Color Mode Toggle - Fix icon display issues */
+.colorModeToggle_kzyk {
+  @apply flex items-center;
+}
+
+.toggleButton_iYsp {
+  @apply w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-lg;
+  @apply hover:bg-gray-100 transition-colors;
+}
+
+[data-theme='dark'] .toggleButton_iYsp {
+  @apply hover:bg-gray-800;
+}
+
+/* Show only the appropriate icon based on current theme */
+.toggleButton_iYsp .toggleIcon_b06o {
+  @apply hidden;
+}
+
+/* Light mode - show moon icon */
+[data-theme='light'] .toggleButton_iYsp .darkToggleIcon_EApx {
+  @apply block;
+}
+
+/* Dark mode - show sun icon */
+[data-theme='dark'] .toggleButton_iYsp .lightToggleIcon_Z_lD {
+  @apply block;
+}
+
+/* Icon sizing and color */
+.toggleIcon_b06o {
+  @apply w-5 h-5 md:w-6 md:h-6;
+  color: var(--ifm-navbar-link-color);
+  transition: color var(--ifm-transition-fast) var(--ifm-transition-timing-default);
+}
+
+.toggleButton_iYsp:hover .toggleIcon_b06o {
+  color: var(--ifm-navbar-link-hover-color);
+}
+
+/* Navbar responsive */
+@media (max-width: 996px) {
+  .navbar__toggle {
+    @apply mr-1;
+  }
+
+  /* Hide desktop navbar items on mobile */
+  .navbar__items .navbar__item {
+    display: none;
+  }
+
+  /* Show toggle button on mobile */
+  .navbar__toggle {
+    display: block;
+  }
+
+  .navbar__items--right > .navbar__item {
+    @apply ml-1;
+  }
+
+  /* Hide color mode toggle in mobile header (top navbar) */
+  .navbar__items--right .colorModeToggle_kzyk,
+  .navbar__items--right .toggle_k5YO {
+    display: none;
+  }
+
+  /* Mobile sidebar menu */
+  .navbar-sidebar {
+    @apply fixed top-0 left-0 h-screen bg-white z-50 shadow-2xl;
+    width: 83vw;
+  }
+
+  [data-theme='dark'] .navbar-sidebar {
+    @apply bg-slate-900;
+  }
+
+  .navbar-sidebar__backdrop {
+    @apply fixed inset-0 bg-black/50 z-40;
+  }
+
+  .navbar-sidebar__brand {
+    @apply flex items-center gap-2 h-16 px-4 border-b border-gray-200;
+  }
+
+  /* Reset order for mobile sidebar and push color mode toggle to the right */
+  .navbar-sidebar__brand .toggle_k5YO {
+    order: 0;
+    @apply ml-auto flex items-center h-full;
+  }
+
+  /* Larger color mode toggle button in mobile sidebar */
+  .navbar-sidebar__brand .toggleButton_iYsp {
+    @apply w-20 h-20;
+  }
+
+  /* Reset order for close button in mobile sidebar */
+  .navbar-sidebar__brand .navbar-sidebar__close {
+    order: 0;
+  }
+
+  [data-theme='dark'] .navbar-sidebar__brand {
+    @apply border-gray-800;
+  }
+
+  .navbar-sidebar__items {
+    @apply h-[calc(100vh-4rem)];
+  }
+
+  .navbar-sidebar__item {
+    @apply px-4 py-3 text-base;
+  }
+
+  .navbar-sidebar__item:first-child {
+    @apply pt-0;
+  }
+
+  .navbar-sidebar__item:last-child {
+    @apply pb-0;
+  }
+
+  .navbar-sidebar .menu {
+    @apply px-0;
+  }
+
+  .navbar-sidebar .menu__link {
+    @apply px-4 py-3 text-base;
+  }
+
+  /* Language selector in mobile sidebar - ensure icon and text are inline */
+  .navbar-sidebar .menu__link svg {
+    @apply inline-block align-middle mr-2;
+  }
+
+  .navbar-sidebar .menu__link.dropdownNavbarItemMobile_QTON,
+  .navbar-sidebar .menu__link[role="button"] {
+    @apply flex items-center;
+  }
+
+  .navbar-sidebar .menu__link .iconLanguage_sdhG {
+    @apply mr-2;
+  }
+}
+
+@media (min-width: 997px) {
+  /* Hide toggle button on desktop */
+  .navbar__toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar__inner {
+    @apply px-3;
+  }
+
+  /* Hide logo text on mobile */
+  .navbar__title {
+    display: none;
+  }
+
+  /* Center logo vertically on mobile */
+  .navbar__brand {
+    @apply flex items-center justify-center;
+  }
+
+  .navbar__logo {
+    @apply flex items-center;
+  }
+
+  .navbar__logo img {
+    height: 1.5rem; /* 24px */
+  }
+
+  .theme-layout-navbar-left {
+    @apply gap-0.5;
+  }
+
+  .theme-layout-navbar-right {
+    @apply gap-0.5;
+  }
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+.footer {
+  @apply border-t border-gray-200 py-12;
+}
+
+[data-theme='dark'] .footer {
+  @apply border-gray-800;
+}
+
+.footer .container {
+  @apply mx-auto max-w-6xl px-8 space-y-8;
+}
+
+.footer__links {
+  @apply mx-auto mb-8;
+}
+
+.footer__link-item {
+  @apply inline-flex items-center gap-1;
+}
+
+.footer__copyright {
+  @apply text-center pt-8 border-t border-gray-200;
+}
+
+[data-theme='dark'] .footer__copyright {
+  @apply border-gray-700;
+}
+
+/* ==========================================================================
+   SIDEBAR
+   ========================================================================== */
+
+/* Sidebar Container */
+.theme-doc-sidebar-container {
+  @apply border-r border-gray-200;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-container {
+  @apply border-gray-800;
+}
+
+/* Desktop Sidebar - Enhanced with better spacing */
+aside[class*="docSidebarContainer"],
+aside[class*="blogSidebarContainer"] {
+  @apply border-r border-gray-200;
+}
+
+[data-theme='dark'] aside[class*="docSidebarContainer"],
+[data-theme='dark'] aside[class*="blogSidebarContainer"] {
+  @apply border-gray-800;
+}
+
+/* Blog-specific sidebar adjustments */
+.col--3 aside,
+aside.col.col--3 {
+  @apply pl-8 pr-4;
+}
+
+/* Sidebar Navigation */
+nav[class*="sidebar"] {
+  @apply py-6 px-2;
+}
+
+/* Menu Container */
+.theme-doc-sidebar-menu,
+.menu {
+  @apply px-3 font-medium;
+}
+
+/* Menu List */
+.menu__list {
+  @apply list-none p-0 m-0 space-y-1;
+}
+
+/* Submenu List */
+.menu__list .menu__list {
+  @apply ml-3 mt-2 border-l-2 border-gray-200 pl-3;
+}
+
+[data-theme='dark'] .menu__list .menu__list {
+  @apply border-gray-700;
+}
+
+/* Menu List Item */
+.menu__list-item {
+  @apply my-1;
+}
+
+/* Category */
+.menu__list-item-collapsible {
+  @apply rounded-lg flex items-center;
+}
+
+/* Category Header */
+.menu__link--sublist {
+  @apply font-semibold text-gray-700 hover:text-gray-900 flex-1;
+}
+
+[data-theme='dark'] .menu__link--sublist {
+  @apply text-gray-300 hover:text-white;
+}
+
+/* Collapse Icon */
+.menu__caret {
+  @apply flex items-center justify-center mr-3;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+/* Remove default Docusaurus caret */
+.menu__caret::before {
+  content: '›';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 300;
+  color: #6b7280;
+  line-height: 1;
+  border: 0;
+  background: transparent;
+  width: auto;
+  height: auto;
+}
+
+[data-theme='dark'] .menu__caret::before {
+  color: #9ca3af;
+}
+
+.menu__link--sublist-caret::after {
+  content: none;
+}
+
+/* Collapsed state - Point right */
+.menu__list-item-collapsible .menu__caret {
+  transform: rotate(90deg);
+}
+
+/* Expanded state - Point down */
+.menu__list-item-collapsible:not(.menu__list-item--collapsed) .menu__caret {
+  transform: rotate(270deg);
+}
+
+/* Menu Link */
+.menu__link {
+  @apply block px-3 py-2 text-sm rounded-lg transition-all duration-150 ease-in-out text-gray-600 hover:text-gray-900 hover:bg-gray-100;
+}
+
+[data-theme='dark'] .menu__link {
+  @apply text-gray-400 hover:text-white hover:bg-gray-800;
+}
+
+/* Active Menu Link */
+.menu__link--active {
+  @apply bg-green-50 text-green-600 font-semibold hover:bg-green-100;
+}
+
+[data-theme='dark'] .menu__link--active {
+  @apply bg-green-600/10 text-green-400 hover:bg-green-600/20;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  @apply border-l-4 border-green-500 -ml-px pl-[11px];
+}
+
+/* Sidebar Item Icons */
+.menu__link-text {
+  @apply flex-1;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  @apply mb-4 flex items-center gap-2;
+}
+
+.breadcrumbs__item {
+  @apply inline-flex items-center text-base;
+}
+
+.breadcrumbs__link {
+  @apply text-gray-600 hover:text-green-600 transition-colors flex items-center px-1;
+}
+
+/* Breadcrumb home icon link - slight padding bottom for visual alignment */
+.breadcrumbs__item:first-child .breadcrumbs__link {
+  @apply pb-0.5;
+}
+
+/* Breadcrumb home icon */
+.breadcrumbHomeIcon_dRb0 {
+  @apply w-5 h-5;
+}
+
+[data-theme='dark'] .breadcrumbs__link {
+  @apply text-gray-400 hover:text-green-400;
+}
+
+.breadcrumbs__item--active .breadcrumbs__link {
+  @apply text-gray-900 font-medium pt-1;
+}
+
+[data-theme='dark'] .breadcrumbs__item--active .breadcrumbs__link {
+  @apply text-white;
+}
+
+/* Sidebar Divider */
+.menu__list-item-collapsible + .menu__list-item-collapsible {
+  @apply mt-3 pt-3 border-t border-gray-200;
+}
+
+[data-theme='dark'] .menu__list-item-collapsible + .menu__list-item-collapsible {
+  @apply border-gray-700;
+}
+
+/* Sidebar Back Button */
+.theme-doc-sidebar-item-back {
+  @apply mb-3 pb-3 border-b border-gray-200;
+}
+
+[data-theme='dark'] .theme-doc-sidebar-item-back {
+  @apply border-gray-700;
+}
+
+/* Version Badge */
+.menu__link-badge {
+  @apply ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800;
+}
+
+[data-theme='dark'] .menu__link-badge {
+  @apply bg-green-900/50 text-green-300;
+}
+
+/* Sidebar Collapse Button - Center alignment */
+.theme-doc-sidebar-container button[title="Collapse sidebar"] {
+  text-align: center;
+}
+
+/* Fix SVG display in collapse button - Override Tailwind's block default */
+.theme-doc-sidebar-container button[title="Collapse sidebar"] svg {
+  display: inline;
+}
+
+/* ==========================================================================
+   ARTICLE
+   ========================================================================== */
+
+article {
+  @apply max-w-none;
+}

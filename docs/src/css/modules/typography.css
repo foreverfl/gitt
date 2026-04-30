@@ -1,0 +1,149 @@
+/**
+ * Typography & Text Styles
+ * ========================
+ * Headings, paragraphs, links, and markdown content
+ */
+
+/* ==========================================================================
+   MARKDOWN CONTENT
+   ========================================================================== */
+
+.markdown {
+  @apply max-w-none text-gray-700;
+}
+
+[data-theme='dark'] .markdown {
+  @apply text-gray-300;
+}
+
+/* ==========================================================================
+   HEADINGS
+   ========================================================================== */
+
+.markdown h1 {
+  @apply text-4xl font-bold text-gray-900 mt-0 mb-8;
+}
+
+.markdown h2 {
+  @apply text-3xl font-bold text-gray-900 mt-12 mb-6;
+}
+
+.markdown h3 {
+  @apply text-2xl font-bold text-gray-900 mt-8 mb-4;
+}
+
+.markdown h4 {
+  @apply text-xl font-semibold text-gray-900 mt-6 mb-3;
+}
+
+.markdown h5 {
+  @apply text-lg font-semibold text-gray-900 mt-4 mb-2;
+}
+
+[data-theme='dark'] .markdown h1,
+[data-theme='dark'] .markdown h2,
+[data-theme='dark'] .markdown h3,
+[data-theme='dark'] .markdown h4,
+[data-theme='dark'] .markdown h5 {
+  @apply text-gray-100;
+}
+
+/* ==========================================================================
+   TEXT ELEMENTS
+   ========================================================================== */
+
+.markdown p {
+  @apply text-gray-700 leading-relaxed mb-6;
+}
+
+[data-theme='dark'] .markdown p {
+  @apply text-gray-300;
+}
+
+.markdown strong {
+  @apply text-gray-900 font-semibold;
+}
+
+[data-theme='dark'] .markdown strong {
+  @apply text-gray-100;
+}
+
+.markdown em {
+  @apply italic;
+}
+
+/* ==========================================================================
+   LINKS
+   ========================================================================== */
+
+.markdown a {
+  @apply text-green-600 no-underline hover:underline;
+}
+
+[data-theme='dark'] .markdown a {
+  @apply text-green-400;
+}
+
+/* ==========================================================================
+   LISTS
+   ========================================================================== */
+
+.markdown ul {
+  @apply my-6 ml-6 list-disc;
+}
+
+.markdown ol {
+  @apply my-6 ml-6 list-decimal;
+}
+
+.markdown li {
+  @apply my-2 leading-relaxed;
+}
+
+/* ==========================================================================
+   BLOCKQUOTES
+   ========================================================================== */
+
+.markdown blockquote {
+  @apply border-l-4 border-green-500 pl-4 italic my-6 text-gray-600;
+}
+
+[data-theme='dark'] .markdown blockquote {
+  @apply border-green-400 text-gray-400;
+}
+
+/* ==========================================================================
+   DIVIDERS
+   ========================================================================== */
+
+.markdown hr {
+  @apply my-8 border-t border-gray-300;
+}
+
+[data-theme='dark'] .markdown hr {
+  @apply border-gray-700;
+}
+
+/* ==========================================================================
+   MARKDOWN TABLES
+   ========================================================================== */
+
+.markdown table {
+  @apply w-full border-collapse my-6;
+}
+
+.markdown th {
+  @apply bg-gray-50 font-semibold text-left p-3 border-b-2 border-gray-200;
+}
+
+[data-theme='dark'] .markdown th {
+  @apply bg-gray-800 border-gray-700;
+}
+
+.markdown td {
+  @apply p-3 border-b border-gray-100;
+}
+
+[data-theme='dark'] .markdown td {
+  @apply border-gray-800;
+}
