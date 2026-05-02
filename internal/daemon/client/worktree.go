@@ -74,6 +74,24 @@ func ListWorktrees() ([]repo.Worktree, error) {
 	return data.Worktrees, nil
 }
 
+// ListWorktreesForRepo returns only the worktree rows whose RepoRoot matches
+// mainRoot. Filtering happens client-side so callers don't have to repeat the
+// pattern; the daemon currently has no per-repo list RPC and the data volume
+// is small enough that one full fetch + filter is the simpler design.
+func ListWorktreesForRepo(mainRoot string) ([]repo.Worktree, error) {
+	worktrees, err := ListWorktrees()
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]repo.Worktree, 0, len(worktrees))
+	for _, w := range worktrees {
+		if w.RepoRoot == mainRoot {
+			filtered = append(filtered, w)
+		}
+	}
+	return filtered, nil
+}
+
 // RenameWorktree asks the daemon to rename a branch and move its worktree
 // folder atomically. The daemon performs `git branch -m`, `git worktree
 // move`, and the row update; failures roll back in reverse order.

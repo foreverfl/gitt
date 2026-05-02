@@ -24,11 +24,11 @@ type Folder struct {
 	Path string `json:"path"`
 }
 
-// Folders fetches every worktree row from the daemon, keeps the ones that
-// belong to mainRoot, and returns folder entries with paths relative to
-// mainRoot so the workspace file is portable across machines.
+// Folders fetches the worktree rows belonging to mainRoot and returns folder
+// entries with paths relative to mainRoot so the workspace file is portable
+// across machines.
 func Folders(mainRoot string) ([]Folder, error) {
-	worktrees, err := client.ListWorktrees()
+	worktrees, err := client.ListWorktreesForRepo(mainRoot)
 	if err != nil {
 		if errors.Is(err, client.ErrNotRunning) {
 			return nil, fmt.Errorf("gitt daemon is not running. start it first: gitt on")
@@ -36,11 +36,8 @@ func Folders(mainRoot string) ([]Folder, error) {
 		return nil, err
 	}
 
-	var folders []Folder
+	folders := make([]Folder, 0, len(worktrees))
 	for _, w := range worktrees {
-		if w.RepoRoot != mainRoot {
-			continue
-		}
 		path, err := filepath.Rel(mainRoot, w.WorktreePath)
 		if err != nil {
 			path = w.WorktreePath
