@@ -28,7 +28,8 @@ var repoUpsertSQL string
 // the FK; RepoRoot comes from the joined repos.root_path; RepoName is
 // derived in Go from RepoRoot's basename and not stored anywhere — keeping
 // it on the struct lets list-style consumers display "<repo> / <branch>"
-// without re-deriving it themselves.
+// without re-deriving it themselves. IsProtected reflects the cached
+// [branches].protected flag — see schema.sql.
 type Worktree struct {
 	ID             int64  `json:"id"`
 	RepoID         int64  `json:"repo_id"`
@@ -38,6 +39,7 @@ type Worktree struct {
 	SafeBranchName string `json:"safe_branch_name"`
 	WorktreePath   string `json:"worktree_path"`
 	Status         string `json:"status"`
+	IsProtected    bool   `json:"is_protected"`
 	CreatedAt      string `json:"created_at"`
 	UpdatedAt      string `json:"updated_at"`
 }
@@ -66,7 +68,7 @@ func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath
 		worktreeInsertSQL,
 		repoID, branchName, safeBranchName, worktreePath,
 	)
-	if err := row.Scan(&worktree.ID, &worktree.Status, &worktree.CreatedAt, &worktree.UpdatedAt); err != nil {
+	if err := row.Scan(&worktree.ID, &worktree.Status, &worktree.IsProtected, &worktree.CreatedAt, &worktree.UpdatedAt); err != nil {
 		return Worktree{}, fmt.Errorf("insert worktree: %w", err)
 	}
 	return worktree, nil
@@ -106,6 +108,7 @@ func (r *Repo) GetWorktree(repoRoot, branchName string) (Worktree, error) {
 		&worktree.SafeBranchName,
 		&worktree.WorktreePath,
 		&worktree.Status,
+		&worktree.IsProtected,
 		&worktree.CreatedAt,
 		&worktree.UpdatedAt,
 	); err != nil {
@@ -136,6 +139,7 @@ func (r *Repo) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, new
 		&worktree.SafeBranchName,
 		&worktree.WorktreePath,
 		&worktree.Status,
+		&worktree.IsProtected,
 		&worktree.CreatedAt,
 		&worktree.UpdatedAt,
 	); err != nil {
@@ -176,6 +180,7 @@ func (r *Repo) ListWorktrees() ([]Worktree, error) {
 			&worktree.SafeBranchName,
 			&worktree.WorktreePath,
 			&worktree.Status,
+			&worktree.IsProtected,
 			&worktree.CreatedAt,
 			&worktree.UpdatedAt,
 		); err != nil {

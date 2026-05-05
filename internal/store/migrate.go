@@ -54,14 +54,21 @@ type migrator func(oldDB, newDB *sql.DB) error
 //    - Same worktrees shape as v1
 //    - Still uses (repo_root, repo_name)
 //
-// 4. v3 (current):
+// 4. v3:
 //    - worktrees replaces (repo_root, repo_name) with repo_id (FK)
 //    - repos table introduced
+//
+// 5. v4 (current):
+//    - worktrees gains is_protected (cache of TOML
+//      [branches].protected); column defaults to 0 and is reconciled
+//      from config on daemon startup
 //
 // Migration strategy:
 // - v1 and v2 both use migrateLegacyWorktreesToCurrent()
 //   because their data shape is identical
 // - Both need backfill into repos, then rewrite worktrees with repo_id
+// - v3 uses migrateV3ToCurrent: shape-equivalent copy plus the new
+//   is_protected column defaulting to 0 (reconciled later by the daemon)
 //
 // Note:
 // - We do NOT chain step-by-step migrations
@@ -69,6 +76,7 @@ type migrator func(oldDB, newDB *sql.DB) error
 var migrations = map[int]migrator{
 	1: migrateLegacyWorktreesToCurrent,
 	2: migrateLegacyWorktreesToCurrent,
+	3: migrateV3ToCurrent,
 }
 
 // migrateLegacyWorktreesToCurrent backfills the v3 repos table from the
@@ -129,6 +137,75 @@ func migrateLegacyWorktreesToCurrent(oldDB, newDB *sql.DB) error {
 			repoIDs[repoRoot] = repoID
 		}
 
+		if _, err := newDB.Exec(
+			`INSERT INTO worktrees (id, repo_id, branch_name, safe_branch_name, worktree_path, status, created_at, updated_at)
+			 VALUES (?,?,?,?,?,?,?,?)`,
+			id, repoID, branchName, safeBranchName, worktreePath, status, createdAt, updatedAt,
+		); err != nil {
+			return fmt.Errorf("insert worktree id=%d: %w", id, err)
+		}
+	}
+	return worktreeRows.Err()
+}
+
+// migrateV3ToCurrent copies a v3 database into the v4 shape. v3 already has
+// the repos table and worktrees-with-repo_id structure; the only delta is
+// the new worktrees.is_protected column, which defaults to 0 here. The
+// daemon's startup reconciliation pass (against the user's current
+// [branches].protected TOML list) is what sets is_protected to 1 on the
+// rows that should actually be protected — we deliberately do NOT read
+// config from inside the migrator so the migration stays a pure data move.
+func migrateV3ToCurrent(oldDB, newDB *sql.DB) error {
+	repoRows, err := oldDB.Query(`
+		SELECT id, root_path, bare_path, worktrees_path, default_branch,
+		       language, framework, compose_monorepo, created_at, updated_at
+		  FROM repos
+		ORDER BY id`)
+	if err != nil {
+		return fmt.Errorf("read repos: %w", err)
+	}
+	defer repoRows.Close()
+	for repoRows.Next() {
+		var (
+			id                                                                  int64
+			rootPath, barePath, worktreesPath, defaultBranch, language, framework string
+			composeMonorepo                                                     int
+			createdAt, updatedAt                                                string
+		)
+		if err := repoRows.Scan(&id, &rootPath, &barePath, &worktreesPath, &defaultBranch, &language, &framework, &composeMonorepo, &createdAt, &updatedAt); err != nil {
+			return fmt.Errorf("scan repo: %w", err)
+		}
+		if _, err := newDB.Exec(
+			`INSERT INTO repos (id, root_path, bare_path, worktrees_path, default_branch, language, framework, compose_monorepo, created_at, updated_at)
+			 VALUES (?,?,?,?,?,?,?,?,?,?)`,
+			id, rootPath, barePath, worktreesPath, defaultBranch, language, framework, composeMonorepo, createdAt, updatedAt,
+		); err != nil {
+			return fmt.Errorf("insert repo id=%d: %w", id, err)
+		}
+	}
+	if err := repoRows.Err(); err != nil {
+		return fmt.Errorf("iterate repos: %w", err)
+	}
+
+	worktreeRows, err := oldDB.Query(`
+		SELECT id, repo_id, branch_name, safe_branch_name, worktree_path,
+		       status, created_at, updated_at
+		  FROM worktrees
+		ORDER BY id`)
+	if err != nil {
+		return fmt.Errorf("read worktrees: %w", err)
+	}
+	defer worktreeRows.Close()
+	for worktreeRows.Next() {
+		var (
+			id, repoID                                       int64
+			branchName, safeBranchName, worktreePath, status string
+			createdAt, updatedAt                             string
+		)
+		if err := worktreeRows.Scan(&id, &repoID, &branchName, &safeBranchName, &worktreePath, &status, &createdAt, &updatedAt); err != nil {
+			return fmt.Errorf("scan worktree: %w", err)
+		}
+		// is_protected omitted on purpose; schema DEFAULT 0 fills it.
 		if _, err := newDB.Exec(
 			`INSERT INTO worktrees (id, repo_id, branch_name, safe_branch_name, worktree_path, status, created_at, updated_at)
 			 VALUES (?,?,?,?,?,?,?,?)`,

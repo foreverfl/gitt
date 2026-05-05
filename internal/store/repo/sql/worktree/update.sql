@@ -13,5 +13,6 @@ RETURNING
   safe_branch_name,
   worktree_path,
   status,
+  is_protected,
   created_at,
   updated_at;

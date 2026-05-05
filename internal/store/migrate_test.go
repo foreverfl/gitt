@@ -363,6 +363,103 @@ func TestMigrateOnDisk_MissingMigratorFails(t *testing.T) {
 	}
 }
 
+// TestMigrateV3ToCurrent_PreservesDataAndDefaultsIsProtected drives the
+// v3→current migrator. It seeds a v3 file (repos + worktrees with repo_id
+// but no is_protected column) and verifies that after MigrateOnDisk the
+// new file carries every row over with is_protected defaulted to 0.
+// Reconciliation against the user's [branches].protected list happens at
+// daemon startup, not inside the migrator.
+func TestMigrateV3ToCurrent_PreservesDataAndDefaultsIsProtected(t *testing.T) {
+	dir := t.TempDir()
+	dbpath := filepath.Join(dir, "v3.db")
+
+	v3, err := openWithPragmas(dbpath)
+	if err != nil {
+		t.Fatalf("openWithPragmas: %v", err)
+	}
+	if _, err := v3.Exec(`
+		CREATE TABLE repos (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  root_path TEXT NOT NULL UNIQUE,
+		  bare_path TEXT NOT NULL,
+		  worktrees_path TEXT NOT NULL,
+		  default_branch TEXT NOT NULL,
+		  language TEXT NOT NULL,
+		  framework TEXT NOT NULL DEFAULT '',
+		  compose_monorepo INTEGER NOT NULL DEFAULT 0,
+		  created_at TEXT NOT NULL,
+		  updated_at TEXT NOT NULL
+		);
+		CREATE TABLE worktrees (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  repo_id INTEGER NOT NULL,
+		  branch_name TEXT NOT NULL,
+		  safe_branch_name TEXT NOT NULL,
+		  worktree_path TEXT NOT NULL,
+		  status TEXT NOT NULL DEFAULT 'created',
+		  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		  FOREIGN KEY (repo_id) REFERENCES repos(id) ON DELETE CASCADE,
+		  UNIQUE (repo_id, branch_name),
+		  UNIQUE (worktree_path)
+		);
+	`); err != nil {
+		t.Fatalf("create v3 schema: %v", err)
+	}
+	if _, err := v3.Exec(
+		`INSERT INTO repos (id, root_path, bare_path, worktrees_path, default_branch, language, framework, compose_monorepo, created_at, updated_at)
+		 VALUES (1, ?, ?, ?, 'main', 'go', '', 0, datetime('now'), datetime('now'))`,
+		"/repo", "/repo/.bare", "/repo/.worktrees",
+	); err != nil {
+		t.Fatalf("seed repo: %v", err)
+	}
+	for _, row := range []struct {
+		branch, safeBranch, path string
+	}{
+		{"main", "main", "/repo/.worktrees/main"},
+		{"feat/foo", "feat-foo", "/repo/.worktrees/feat-foo"},
+	} {
+		if _, err := v3.Exec(
+			`INSERT INTO worktrees (repo_id, branch_name, safe_branch_name, worktree_path) VALUES (1, ?, ?, ?)`,
+			row.branch, row.safeBranch, row.path,
+		); err != nil {
+			t.Fatalf("seed worktree %s: %v", row.branch, err)
+		}
+	}
+	if _, err := v3.Exec("PRAGMA user_version = 3"); err != nil {
+		t.Fatalf("stamp v3: %v", err)
+	}
+	if err := v3.Close(); err != nil {
+		t.Fatalf("close v3: %v", err)
+	}
+
+	if err := MigrateOnDisk(dbpath, 3, currentSchemaVersion); err != nil {
+		t.Fatalf("MigrateOnDisk: %v", err)
+	}
+
+	migrated, err := openWithPragmas(dbpath)
+	if err != nil {
+		t.Fatalf("reopen migrated db: %v", err)
+	}
+	t.Cleanup(func() { _ = migrated.Close() })
+
+	worktrees, err := repo.New(migrated).ListWorktrees()
+	if err != nil {
+		t.Fatalf("ListWorktrees: %v", err)
+	}
+	if len(worktrees) != 2 {
+		t.Fatalf("worktrees count = %d, want 2", len(worktrees))
+	}
+	for _, w := range worktrees {
+		if w.IsProtected {
+			t.Errorf("worktree %s migrated with is_protected=true; expected default 0 (reconciliation runs later)", w.BranchName)
+		}
+		if w.RepoRoot != "/repo" {
+			t.Errorf("worktree %s lost repo_root: got %q", w.BranchName, w.RepoRoot)
+		}
+	}
+}
+
 // TestMigrateLegacyWorktreesToCurrent_BackfillsRepos exercises the real
 // migrator that handles v1 and v2 sources. It builds a database with the
 // legacy worktrees shape (repo_root, repo_name) and no repos rows, then

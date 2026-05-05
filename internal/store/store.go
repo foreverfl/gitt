@@ -16,7 +16,7 @@ var schemaSQL string
 // schema.sql changes shape and register a v(N-1)→v(N) entry in migrations.
 // The value is stamped into PRAGMA user_version so older binaries can detect
 // "DB is newer than me" and refuse to downgrade silently.
-const currentSchemaVersion = 3
+const currentSchemaVersion = 4
 
 // Store wraps the SQLite handle used by the daemon.
 // All writes go through BEGIN IMMEDIATE so port allocation is race-free.
