@@ -52,7 +52,7 @@ type Worktree struct {
 // moment the row exists. Returns the populated record (id, repo_id,
 // status, timestamps filled in by SQLite). Returns an error when
 // (repo_id, branch_name) or worktree_path is already taken.
-func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath string, isProtected bool) (Worktree, error) {
+func (repo *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath string, isProtected bool) (Worktree, error) {
 	worktree := Worktree{
 		RepoRoot:       repoRoot,
 		RepoName:       filepath.Base(repoRoot),
@@ -61,13 +61,13 @@ func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath
 		WorktreePath:   worktreePath,
 	}
 
-	repoID, err := r.upsertRepo(repoRoot)
+	repoID, err := repo.upsertRepo(repoRoot)
 	if err != nil {
 		return Worktree{}, err
 	}
 	worktree.RepoID = repoID
 
-	row := r.db.QueryRow(
+	row := repo.db.QueryRow(
 		worktreeInsertSQL,
 		repoID, branchName, safeBranchName, worktreePath, isProtected,
 	)
@@ -84,8 +84,8 @@ func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath
 // repo configuration commands; on a repeat call the row's updated_at is
 // bumped to mark "last referenced" without disturbing the configured
 // metadata.
-func (r *Repo) upsertRepo(repoRoot string) (int64, error) {
-	row := r.db.QueryRow(
+func (repo *Repo) upsertRepo(repoRoot string) (int64, error) {
+	row := repo.db.QueryRow(
 		repoUpsertSQL,
 		repoRoot,
 		filepath.Join(repoRoot, ".bare"),
@@ -100,8 +100,8 @@ func (r *Repo) upsertRepo(repoRoot string) (int64, error) {
 
 // GetWorktree fetches a single worktree row by (repoRoot, branchName).
 // Returns sql.ErrNoRows wrapped with context when no row matches.
-func (r *Repo) GetWorktree(repoRoot, branchName string) (Worktree, error) {
-	row := r.db.QueryRow(worktreeGetSQL, repoRoot, branchName)
+func (repo *Repo) GetWorktree(repoRoot, branchName string) (Worktree, error) {
+	row := repo.db.QueryRow(worktreeGetSQL, repoRoot, branchName)
 	var worktree Worktree
 	if err := row.Scan(
 		&worktree.ID,
@@ -127,8 +127,8 @@ func (r *Repo) GetWorktree(repoRoot, branchName string) (Worktree, error) {
 // (repo_id, branch_name) and worktree_path are enforced by the store; a
 // conflict with another row surfaces as the error. When no row matches,
 // returns sql.ErrNoRows wrapped with context.
-func (r *Repo) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, newWorktreePath string) (Worktree, error) {
-	row := r.db.QueryRow(
+func (repo *Repo) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, newWorktreePath string) (Worktree, error) {
+	row := repo.db.QueryRow(
 		worktreeUpdateSQL,
 		newBranch, newSafeBranch, newWorktreePath,
 		repoRoot, oldBranch,
@@ -155,8 +155,8 @@ func (r *Repo) UpdateWorktree(repoRoot, oldBranch, newBranch, newSafeBranch, new
 // DeleteWorktree removes a worktree row identified by (repoRoot, branchName).
 // Returns sql.ErrNoRows wrapped with context when no row matches, so callers
 // can distinguish "already gone" from real failures.
-func (r *Repo) DeleteWorktree(repoRoot, branchName string) error {
-	row := r.db.QueryRow(worktreeDeleteSQL, repoRoot, branchName)
+func (repo *Repo) DeleteWorktree(repoRoot, branchName string) error {
+	row := repo.db.QueryRow(worktreeDeleteSQL, repoRoot, branchName)
 	var id int64
 	if err := row.Scan(&id); err != nil {
 		return fmt.Errorf("delete worktree (%s, %s): %w", repoRoot, branchName, err)
@@ -165,8 +165,8 @@ func (r *Repo) DeleteWorktree(repoRoot, branchName string) error {
 }
 
 // ListWorktrees returns every worktree row, sorted by repo then branch.
-func (r *Repo) ListWorktrees() ([]Worktree, error) {
-	rows, err := r.db.Query(worktreeListSQL)
+func (repo *Repo) ListWorktrees() ([]Worktree, error) {
+	rows, err := repo.db.Query(worktreeListSQL)
 	if err != nil {
 		return nil, fmt.Errorf("list worktrees: %w", err)
 	}

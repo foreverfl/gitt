@@ -13,6 +13,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/foreverfl/gitt/internal/config"
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/store"
 	"github.com/foreverfl/gitt/internal/store/repo"
@@ -47,9 +48,23 @@ func Run(sockPath, dbPath string) error {
 		return fmt.Errorf("listen %s: %w", sockPath, err)
 	}
 
+	repository := repo.New(sqliteStore.DB())
+
+	// Reconcile is_protected against the current TOML before serving any
+	// requests. The user can edit [branches].protected while the daemon is
+	// down, so this is the only point at which the cached flag can catch
+	// up to the source of truth before rename/remove handlers read it.
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	if err := repository.ReconcileProtected(cfg.Branches.Protected); err != nil {
+		return fmt.Errorf("reconcile is_protected: %w", err)
+	}
+
 	srv := &server{
 		listener: listener,
-		repo:     repo.New(sqliteStore.DB()),
+		repo:     repository,
 		shutdown: make(chan struct{}),
 	}
 	srv.handlers = map[daemon.Op]handler{
