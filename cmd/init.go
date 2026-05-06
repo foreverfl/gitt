@@ -7,6 +7,7 @@ import (
 
 	"github.com/foreverfl/gitt/internal/daemon/client"
 	"github.com/foreverfl/gitt/internal/gitx"
+	"github.com/foreverfl/gitt/internal/prompts"
 	"github.com/spf13/cobra"
 )
 
@@ -37,6 +38,13 @@ var initCmd = &cobra.Command{
 			branch = gitx.DefaultInitBranch()
 		}
 
+		flagValue, _ := cmd.Flags().GetString("project-type")
+		yes, _ := cmd.Flags().GetBool("yes")
+		projectType, err := prompts.ResolveProjectType(flagValue, yes)
+		if err != nil {
+			return err
+		}
+
 		bareDir := filepath.Join(absTarget, ".bare")
 		if err := gitx.InitBare(bareDir, branch); err != nil {
 			return err
@@ -58,7 +66,7 @@ var initCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "warning: daemon registration failed: %v\n", err)
 		}
 
-		fmt.Printf("\ninitialized\n  project: %s\n  branch:  %s\n  worktree: %s\n", absTarget, branch, worktreePath)
+		fmt.Printf("\ninitialized\n  project:      %s\n  branch:       %s\n  worktree:     %s\n  project-type: %s\n", absTarget, branch, worktreePath, projectType)
 		fmt.Printf("\nNext:\n  cd %s\n", worktreePath)
 		return nil
 	},
@@ -66,5 +74,6 @@ var initCmd = &cobra.Command{
 
 func init() {
 	initCmd.Flags().StringP("initial-branch", "b", "", "name of initial branch (default: init.defaultBranch or 'main')")
+	initCmd.Flags().String("project-type", "", "project type (single-port; multi-port is experimental)")
 	rootCmd.AddCommand(initCmd)
 }

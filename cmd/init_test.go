@@ -14,9 +14,15 @@ func TestInitCmd(t *testing.T) {
 	t.Chdir(work)
 
 	if err := initCmd.Flags().Set("initial-branch", "trunk"); err != nil {
-		t.Fatalf("set flag: %v", err)
+		t.Fatalf("set initial-branch: %v", err)
 	}
-	t.Cleanup(func() { _ = initCmd.Flags().Set("initial-branch", "") })
+	if err := initCmd.Flags().Set("project-type", "single-port"); err != nil {
+		t.Fatalf("set project-type: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = initCmd.Flags().Set("initial-branch", "")
+		_ = initCmd.Flags().Set("project-type", "")
+	})
 
 	if err := initCmd.RunE(initCmd, []string{"myproj"}); err != nil {
 		t.Fatalf("init: %v", err)
@@ -68,5 +74,46 @@ func TestInitCmd_RefusesExistingGit(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), ".git") {
 		t.Errorf("error = %v, want mention of .git", err)
+	}
+}
+
+func TestInitCmd_RefusesMultiPort(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	work := t.TempDir()
+	t.Chdir(work)
+
+	if err := initCmd.Flags().Set("project-type", "multi-port"); err != nil {
+		t.Fatalf("set project-type: %v", err)
+	}
+	t.Cleanup(func() { _ = initCmd.Flags().Set("project-type", "") })
+
+	err := initCmd.RunE(initCmd, []string{"experimental"})
+	if err == nil {
+		t.Fatal("expected error when --project-type=multi-port, got nil")
+	}
+	if !strings.Contains(err.Error(), "multi-port") {
+		t.Errorf("error = %v, want mention of multi-port", err)
+	}
+
+	if _, statErr := os.Stat(filepath.Join(work, "experimental", ".bare")); statErr == nil {
+		t.Errorf("expected no .bare on refusal; project dir was populated")
+	}
+}
+
+func TestInitCmd_NonInteractiveWithoutFlag(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	work := t.TempDir()
+	t.Chdir(work)
+
+	t.Cleanup(func() { _ = initCmd.Flags().Set("project-type", "") })
+
+	err := initCmd.RunE(initCmd, []string{"silent"})
+	if err == nil {
+		t.Fatal("expected error in non-interactive shell with no --project-type and no --yes")
+	}
+	if !strings.Contains(err.Error(), "non-interactive") {
+		t.Errorf("error = %v, want mention of non-interactive", err)
 	}
 }
