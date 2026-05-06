@@ -139,7 +139,7 @@ func TestMigrateOnDisk_MovesSidecarsAlongsideMainFile(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 	if _, err := repo.New(store.DB()).InsertWorktree(
-		"/repo", "main", "main", "/repo/.worktrees/main",
+		"/repo", "main", "main", "/repo/.worktrees/main", false,
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
@@ -194,7 +194,7 @@ func TestMigrateOnDisk_HappyPathPreservesData(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 	if _, err := repo.New(store.DB()).InsertWorktree(
-		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
+		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo", false,
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
@@ -298,7 +298,7 @@ func TestMigrateOnDisk_FailureRestoresOriginal(t *testing.T) {
 		t.Fatalf("Open: %v", err)
 	}
 	if _, err := repo.New(store.DB()).InsertWorktree(
-		"/repo", "main", "main", "/repo/.worktrees/main",
+		"/repo", "main", "main", "/repo/.worktrees/main", false,
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}

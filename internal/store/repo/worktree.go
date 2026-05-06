@@ -46,10 +46,13 @@ type Worktree struct {
 
 // InsertWorktree persists a new worktree row, upserting the parent repos
 // row first so callers that pass only a repo_root path don't have to
-// register the repository up-front. Returns the populated record (id,
-// repo_id, status, timestamps filled in by SQLite). Returns an error
-// when (repo_id, branch_name) or worktree_path is already taken.
-func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath string) (Worktree, error) {
+// register the repository up-front. isProtected is stamped onto the row
+// at insert time — typically computed by the caller from the user's
+// [branches].protected config so the cached flag matches policy from the
+// moment the row exists. Returns the populated record (id, repo_id,
+// status, timestamps filled in by SQLite). Returns an error when
+// (repo_id, branch_name) or worktree_path is already taken.
+func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath string, isProtected bool) (Worktree, error) {
 	worktree := Worktree{
 		RepoRoot:       repoRoot,
 		RepoName:       filepath.Base(repoRoot),
@@ -66,7 +69,7 @@ func (r *Repo) InsertWorktree(repoRoot, branchName, safeBranchName, worktreePath
 
 	row := r.db.QueryRow(
 		worktreeInsertSQL,
-		repoID, branchName, safeBranchName, worktreePath,
+		repoID, branchName, safeBranchName, worktreePath, isProtected,
 	)
 	if err := row.Scan(&worktree.ID, &worktree.Status, &worktree.IsProtected, &worktree.CreatedAt, &worktree.UpdatedAt); err != nil {
 		return Worktree{}, fmt.Errorf("insert worktree: %w", err)
