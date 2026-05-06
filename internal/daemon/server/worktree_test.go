@@ -75,6 +75,7 @@ func TestHandleRenameWorktree_RenamesFolderBranchAndRow(t *testing.T) {
 		repoRoot,
 		"feat/foo", "feat-foo",
 		filepath.Join(repoRoot, ".worktrees/feat-foo"),
+		false,
 	); err != nil {
 		t.Fatalf("InsertWorktree: %v", err)
 	}
@@ -130,6 +131,7 @@ func TestHandleRenameWorktree_RejectsTargetExists(t *testing.T) {
 	if _, err := srv.repo.InsertWorktree(
 		repoRoot,
 		"a", "a", filepath.Join(repoRoot, ".worktrees/a"),
+		false,
 	); err != nil {
 		t.Fatalf("InsertWorktree a: %v", err)
 	}
@@ -157,6 +159,7 @@ func TestHandleRelease_DeletesRow(t *testing.T) {
 		repoRoot,
 		"feat/foo", "feat-foo",
 		filepath.Join(repoRoot, ".worktrees/feat-foo"),
+		false,
 	); err != nil {
 		t.Fatalf("InsertWorktree: %v", err)
 	}
@@ -196,6 +199,63 @@ func TestHandleRelease_RejectsMissing(t *testing.T) {
 	})
 	if resp.OK {
 		t.Fatal("expected release of non-existent row to fail, got OK")
+	}
+}
+
+// TestHandleRegisterWorktree_StampsProtectedFromConfig drives the
+// register handler with HOME pointed at a config that lists "main" as
+// protected. A register call for "main" should land the row with
+// is_protected=true (creating a worktree for a protected branch is
+// allowed; the protection only blocks rename/remove later), while a
+// register call for "feat/foo" — not in the protected list — should
+// land with is_protected=false. This covers the "stamp at register
+// time" half of the protected-branch flow; the matching reconciliation
+// pass that fixes up rows when the user edits the protected list lives
+// elsewhere.
+func TestHandleRegisterWorktree_StampsProtectedFromConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	gittDir := filepath.Join(home, ".gitt")
+	if err := os.MkdirAll(gittDir, 0o755); err != nil {
+		t.Fatalf("mkdir gitt dir: %v", err)
+	}
+	if err := os.WriteFile(
+		filepath.Join(gittDir, "config.toml"),
+		[]byte("[branches]\nprotected = [\"main\"]\n"),
+		0o644,
+	); err != nil {
+		t.Fatalf("write config.toml: %v", err)
+	}
+
+	srv := newTestServer(t)
+
+	cases := []struct {
+		branch string
+		want   bool
+	}{
+		{"main", true},
+		{"feat/foo", false},
+	}
+	for _, tc := range cases {
+		resp := srv.handleRegisterWorktree(daemon.Request{
+			Op: daemon.OpRegisterWorktree,
+			Args: mustEncodeArgs(t, daemon.RegisterWorktreeArgs{
+				RepoRoot:       "/repo",
+				BranchName:     tc.branch,
+				SafeBranchName: tc.branch,
+				WorktreePath:   filepath.Join("/repo/.worktrees", tc.branch),
+			}),
+		})
+		if !resp.OK {
+			t.Fatalf("register %s failed: %s", tc.branch, resp.Error)
+		}
+		var data daemon.WorktreeData
+		if err := daemon.DecodeData(resp, &data); err != nil {
+			t.Fatalf("decode response for %s: %v", tc.branch, err)
+		}
+		if data.Worktree.IsProtected != tc.want {
+			t.Errorf("branch %q: IsProtected = %v, want %v", tc.branch, data.Worktree.IsProtected, tc.want)
+		}
 	}
 }
 

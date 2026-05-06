@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/foreverfl/gitt/internal/config"
 	"github.com/foreverfl/gitt/internal/daemon"
 	"github.com/foreverfl/gitt/internal/gitx"
 )
@@ -12,6 +13,16 @@ import (
 // handleRegisterWorktree persists a worktree row from the request args.
 // The unique constraint on (repo_root, branch_name) and worktree_path is
 // enforced by the store; conflicts surface as the error.
+//
+// is_protected is stamped server-side from the user's
+// [branches].protected list at insert time so the cached flag is
+// authoritative the moment the row exists. The daemon — not the client —
+// owns this decision because the same branch name must resolve the same
+// way on `gitt add` and on the startup reconciliation pass; computing it
+// in one place keeps both paths honest. Allowing `gitt add main` (or any
+// other protected name) to succeed and just marking the resulting row
+// protected is intentional: branch creation isn't the dangerous
+// operation; rename/remove is, and those paths read this flag.
 func (s *server) handleRegisterWorktree(req daemon.Request) daemon.Response {
 	var args daemon.RegisterWorktreeArgs
 	if err := daemon.DecodeArgs(req, &args); err != nil {
@@ -22,7 +33,13 @@ func (s *server) handleRegisterWorktree(req daemon.Request) daemon.Response {
 		return daemon.Response{OK: false, Error: "register_worktree: missing required arg"}
 	}
 
-	row, err := s.repo.InsertWorktree(args.RepoRoot, args.BranchName, args.SafeBranchName, args.WorktreePath)
+	cfg, err := config.Load()
+	if err != nil {
+		return daemon.Response{OK: false, Error: fmt.Sprintf("load config: %s", err)}
+	}
+	isProtected := cfg.IsProtected(args.BranchName)
+
+	row, err := s.repo.InsertWorktree(args.RepoRoot, args.BranchName, args.SafeBranchName, args.WorktreePath, isProtected)
 	if err != nil {
 		return daemon.Response{OK: false, Error: err.Error()}
 	}

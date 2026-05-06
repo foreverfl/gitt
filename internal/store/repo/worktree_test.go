@@ -20,10 +20,48 @@ func openTestRepo(t *testing.T) *Repo {
 	return New(s.DB())
 }
 
+// TestInsertWorktree_StampsProtectedFlag verifies that the isProtected
+// argument is round-tripped through the INSERT and read back from the
+// returned row, so callers can tell at register time whether the worktree
+// they just created is governed by the protection policy.
+func TestInsertWorktree_StampsProtectedFlag(t *testing.T) {
+	r := openTestRepo(t)
+
+	protected, err := r.InsertWorktree(
+		"/repo", "main", "main", "/repo/.worktrees/main", true,
+	)
+	if err != nil {
+		t.Fatalf("Insert main: %v", err)
+	}
+	if !protected.IsProtected {
+		t.Errorf("inserted protected row IsProtected = false, want true")
+	}
+
+	regular, err := r.InsertWorktree(
+		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo", false,
+	)
+	if err != nil {
+		t.Fatalf("Insert feat/foo: %v", err)
+	}
+	if regular.IsProtected {
+		t.Errorf("inserted unprotected row IsProtected = true, want false")
+	}
+
+	// Read back through Get to confirm the flag persists past the
+	// INSERT ... RETURNING path.
+	got, err := r.GetWorktree("/repo", "main")
+	if err != nil {
+		t.Fatalf("GetWorktree: %v", err)
+	}
+	if !got.IsProtected {
+		t.Errorf("GetWorktree(main).IsProtected = false, want true")
+	}
+}
+
 func TestUpdateWorktree_Happy(t *testing.T) {
 	r := openTestRepo(t)
 	inserted, err := r.InsertWorktree(
-		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
+		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo", false,
 	)
 	if err != nil {
 		t.Fatalf("Insert: %v", err)
@@ -71,12 +109,12 @@ func TestUpdateWorktree_NoMatch(t *testing.T) {
 func TestUpdateWorktree_BranchNameConflict(t *testing.T) {
 	r := openTestRepo(t)
 	if _, err := r.InsertWorktree(
-		"/repo", "a", "a", "/repo/.worktrees/a",
+		"/repo", "a", "a", "/repo/.worktrees/a", false,
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
 	if _, err := r.InsertWorktree(
-		"/repo", "b", "b", "/repo/.worktrees/b",
+		"/repo", "b", "b", "/repo/.worktrees/b", false,
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
@@ -96,12 +134,12 @@ func TestUpdateWorktree_BranchNameConflict(t *testing.T) {
 func TestUpdateWorktree_PathConflict(t *testing.T) {
 	r := openTestRepo(t)
 	if _, err := r.InsertWorktree(
-		"/repo", "a", "a", "/repo/.worktrees/a",
+		"/repo", "a", "a", "/repo/.worktrees/a", false,
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
 	if _, err := r.InsertWorktree(
-		"/repo", "b", "b", "/repo/.worktrees/b",
+		"/repo", "b", "b", "/repo/.worktrees/b", false,
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
@@ -118,7 +156,7 @@ func TestUpdateWorktree_PathConflict(t *testing.T) {
 func TestDeleteWorktree_Happy(t *testing.T) {
 	r := openTestRepo(t)
 	if _, err := r.InsertWorktree(
-		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo",
+		"/repo", "feat/foo", "feat-foo", "/repo/.worktrees/feat-foo", false,
 	); err != nil {
 		t.Fatalf("Insert: %v", err)
 	}
@@ -143,12 +181,12 @@ func TestDeleteWorktree_NoMatch(t *testing.T) {
 func TestDeleteWorktree_LeavesOtherRows(t *testing.T) {
 	r := openTestRepo(t)
 	if _, err := r.InsertWorktree(
-		"/repo", "a", "a", "/repo/.worktrees/a",
+		"/repo", "a", "a", "/repo/.worktrees/a", false,
 	); err != nil {
 		t.Fatalf("Insert a: %v", err)
 	}
 	if _, err := r.InsertWorktree(
-		"/repo", "b", "b", "/repo/.worktrees/b",
+		"/repo", "b", "b", "/repo/.worktrees/b", false,
 	); err != nil {
 		t.Fatalf("Insert b: %v", err)
 	}
@@ -165,12 +203,12 @@ func TestDeleteWorktree_LeavesOtherRows(t *testing.T) {
 func TestDeleteWorktree_RestrictsToRepo(t *testing.T) {
 	r := openTestRepo(t)
 	if _, err := r.InsertWorktree(
-		"/repoA", "shared", "shared", "/repoA/.worktrees/shared",
+		"/repoA", "shared", "shared", "/repoA/.worktrees/shared", false,
 	); err != nil {
 		t.Fatalf("Insert A/shared: %v", err)
 	}
 	if _, err := r.InsertWorktree(
-		"/repoB", "shared", "shared", "/repoB/.worktrees/shared",
+		"/repoB", "shared", "shared", "/repoB/.worktrees/shared", false,
 	); err != nil {
 		t.Fatalf("Insert B/shared: %v", err)
 	}
